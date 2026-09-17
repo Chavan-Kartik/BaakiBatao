@@ -1,0 +1,5 @@
+{
+  "_comment": "Rounding is declared, not incidental. Drift surfaces in the reconciliation residual rather than being silently absorbed. matchTolerancePaise is the band within which our figure and the insurer's are treated as agreeing during bucket assignment.",
+  "mode": "ROUND_HALF_UP",
+  "matchTolerancePaise": 100
+}

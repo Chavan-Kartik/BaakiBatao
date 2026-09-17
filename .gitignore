@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+
+# CDK
+cdk.out/
+.cdk.staging/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# test & coverage
+coverage/
+.vitest/
+
+# generated corpus artefacts — regenerable from a seed, so never committed
+fixtures/corpus/pack-*/
+eval-runs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+
+# logs
+*.log
+pnpm-debug.log*
+
+# NEVER commit unredacted source documents
+fixtures/originals/
+**/unredacted/
+
+# Internal planning docs — shared with the team directly, not through the repo
+FINAL-PROJECT.md
+IMPLEMENTATION.md
+PROBLEM-STATEMENTS.md

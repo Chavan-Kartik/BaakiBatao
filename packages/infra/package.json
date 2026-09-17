@@ -1,0 +1,20 @@
+{
+  "name": "@fc/infra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CDK app. One `cdk deploy --all` brings up the whole system including the web tier.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --all"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.173.2",
+    "cdk-nag": "^2.34.23",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.173.2",
+    "tsx": "^4.19.2"
+  }
+}

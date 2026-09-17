@@ -1,0 +1,6 @@
+{
+  "_comment": "Regenerate with `pnpm --filter @fc/rulepack lock`. This hash is pinned into every reconstruction certificate, so an old certificate remains verifiable after a rule is corrected.",
+  "version": "v1",
+  "hash": "sha256:3bed6335f9b2508784bf0a8ea6417fa48058ac6de0e4f5b2cfaedf4cf40ed88c",
+  "generatedAt": "2026-09-17T18:08:44.777Z"
+}

@@ -1,0 +1,42 @@
+{
+  "name": "first-commit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Policy-aware settlement reconstructor for Indian health insurance claims",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --parallel typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "dep:cruise": "depcruise packages --config .dependency-cruiser.cjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:property": "vitest run --dir packages/engine",
+    "eval:generate": "pnpm --filter @fc/eval exec tsx src/cli.ts generate",
+    "eval:run": "pnpm --filter @fc/eval exec tsx src/cli.ts run",
+    "eval:report": "pnpm --filter @fc/eval exec tsx src/cli.ts report",
+    "eval:calibrate": "pnpm --filter @fc/eval exec tsx src/cli.ts calibrate",
+    "web:dev": "pnpm --filter @fc/web dev",
+    "web:build": "pnpm --filter @fc/web build",
+    "cdk": "pnpm --filter @fc/infra exec cdk",
+    "cdk:synth": "pnpm --filter @fc/infra exec cdk synth",
+    "deploy": "pnpm --filter @fc/infra exec cdk deploy --all",
+    "verify": "pnpm typecheck && pnpm lint && pnpm dep:cruise && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "dependency-cruiser": "^16.9.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^2.1.8"
+  }
+}

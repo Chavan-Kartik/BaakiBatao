@@ -1,0 +1,244 @@
+{
+  "_comment": "Canonical line categories. Each carries its own AME eligibility and the clause that grounds it, which is what makes step 5 a table lookup rather than a pile of conditionals — and what makes every finding automatically citable. TODO(W3): expand to ~60 and attach embedding centroids at rulepack build time.",
+
+  "ROOM_RENT": {
+    "categoryId": "ROOM_RENT",
+    "label": "Room rent / bed charges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["room rent", "bed charges", "room charges", "accommodation", "bed charge"]
+  },
+
+  "ICU_CHARGE": {
+    "categoryId": "ICU_CHARGE",
+    "label": "ICU / ITU charges",
+    "ameEligible": false,
+    "ameExclusionClause": "PD.ICU",
+    "proportionateImmune": true,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["icu charges", "itu", "intensive care", "icu bed", "critical care unit", "hdu"]
+  },
+
+  "PHARMACY_CONSUMABLE": {
+    "categoryId": "PHARMACY_CONSUMABLE",
+    "label": "Pharmacy and consumables",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.PHARMA",
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": ["CONSUMABLES_RIDER"],
+    "aliases": [
+      "pharmacy",
+      "medicines",
+      "drugs",
+      "drugs & consumables",
+      "chemist",
+      "medical store",
+      "pharmacy charges",
+      "consumables"
+    ]
+  },
+
+  "IMPLANT_DEVICE": {
+    "categoryId": "IMPLANT_DEVICE",
+    "label": "Implants and medical devices",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.IMPLANT",
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["implant", "stent", "prosthesis", "medical device", "lens", "iol", "mesh", "plate"]
+  },
+
+  "DIAGNOSTICS": {
+    "categoryId": "DIAGNOSTICS",
+    "label": "Diagnostics and investigations",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.DIAG",
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "lab",
+      "laboratory",
+      "pathology",
+      "radiology",
+      "investigation",
+      "x-ray",
+      "ct scan",
+      "mri",
+      "ultrasound",
+      "ecg",
+      "blood test"
+    ]
+  },
+
+  "SURGEON_FEE": {
+    "categoryId": "SURGEON_FEE",
+    "label": "Surgeon's fee",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["surgeon fee", "surgeon charges", "operating surgeon", "surgery charges"]
+  },
+
+  "ANAESTHETIST_FEE": {
+    "categoryId": "ANAESTHETIST_FEE",
+    "label": "Anaesthetist's fee",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["anaesthetist", "anesthesia charges", "anaesthesia"]
+  },
+
+  "OT_CHARGE": {
+    "categoryId": "OT_CHARGE",
+    "label": "Operation theatre charges",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["ot charges", "operation theatre", "theatre charges", "ot"]
+  },
+
+  "NURSING_CHARGE": {
+    "categoryId": "NURSING_CHARGE",
+    "label": "Nursing charges",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["nursing", "nursing charges", "nursing care"]
+  },
+
+  "DOCTOR_VISIT": {
+    "categoryId": "DOCTOR_VISIT",
+    "label": "Doctor visit / consultation",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "doctor visit",
+      "consultation",
+      "visiting consultant",
+      "physician charges",
+      "rmo charges"
+    ]
+  },
+
+  "PHYSIOTHERAPY": {
+    "categoryId": "PHYSIOTHERAPY",
+    "label": "Physiotherapy",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["physiotherapy", "physio", "rehabilitation"]
+  },
+
+  "OXYGEN": {
+    "categoryId": "OXYGEN",
+    "label": "Oxygen charges",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["oxygen", "o2 charges", "oxygen cylinder"]
+  },
+
+  "BLOOD_PRODUCT": {
+    "categoryId": "BLOOD_PRODUCT",
+    "label": "Blood and blood products",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["blood", "blood transfusion", "prbc", "plasma", "platelets"]
+  },
+
+  "AMBULANCE": {
+    "categoryId": "AMBULANCE",
+    "label": "Ambulance charges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["ambulance", "ambulance charges", "patient transport"]
+  },
+
+  "REGISTRATION_FEE": {
+    "categoryId": "REGISTRATION_FEE",
+    "label": "Registration and admission fee",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": ["registration", "registration fee", "admission charges", "file charges"]
+  },
+
+  "ADMIN_CHARGE": {
+    "categoryId": "ADMIN_CHARGE",
+    "label": "Administrative and service charges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "administrative charges",
+      "service charges",
+      "medical records charges",
+      "documentation charges"
+    ]
+  },
+
+  "FOOD_BEVERAGE": {
+    "categoryId": "FOOD_BEVERAGE",
+    "label": "Food and beverages (other than patient diet)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": ["food", "beverage", "attendant food", "canteen", "diet charges"]
+  },
+
+  "TOILETRIES": {
+    "categoryId": "TOILETRIES",
+    "label": "Toiletries and personal comfort items",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": ["CONSUMABLES_RIDER"],
+    "aliases": ["toiletries", "soap", "toothpaste", "comfort items", "sanitary"]
+  },
+
+  "PPE_KIT": {
+    "categoryId": "PPE_KIT",
+    "label": "PPE kits, gloves and masks",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": ["CONSUMABLES_RIDER"],
+    "aliases": ["ppe kit", "gloves", "mask", "face mask", "sanitizer", "ppe charges"]
+  }
+}

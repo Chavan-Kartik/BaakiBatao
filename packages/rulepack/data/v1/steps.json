@@ -1,0 +1,48 @@
+{
+  "rulepackVersion": "v1",
+  "_comment": "THE ORDER. Order matters more than any individual rule — each step consumes the output of the last. Proportionate deduction is step 5 of 7, not the thesis. Changing `order` under COPAY_DEDUCTIBLE is how we model a different insurer's wording without a code change.",
+  "steps": [
+    {
+      "id": "ADMISSIBILITY",
+      "reducer": "01-admissibility",
+      "haltsOnFail": true,
+      "params": {}
+    },
+    {
+      "id": "NORMALISATION_GATE",
+      "reducer": "02-normalisation-gate",
+      "haltsOnFail": false,
+      "params": { "minConfidence": 0.82 }
+    },
+    {
+      "id": "NON_PAYABLE",
+      "reducer": "03-non-payable",
+      "haltsOnFail": false,
+      "params": { "checkRidersFirst": true }
+    },
+    {
+      "id": "CAPS_SUBLIMITS",
+      "reducer": "04-caps-sublimits",
+      "haltsOnFail": false,
+      "params": {}
+    },
+    {
+      "id": "PROPORTIONATE",
+      "reducer": "05-proportionate",
+      "haltsOnFail": false,
+      "params": {}
+    },
+    {
+      "id": "COPAY_DEDUCTIBLE",
+      "reducer": "06-copay-deductible",
+      "haltsOnFail": false,
+      "params": { "order": ["DEDUCTIBLE", "COPAY"] }
+    },
+    {
+      "id": "SUM_INSURED",
+      "reducer": "07-sum-insured",
+      "haltsOnFail": false,
+      "params": {}
+    }
+  ]
+}

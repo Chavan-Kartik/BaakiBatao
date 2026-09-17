@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # The engine-purity rule. packages/engine has to stay importable from a
+      # browser bundle, which means no AWS SDK and no Node built-ins. This is a
+      # required check, not advisory — see docs/decisions/007.
+      - name: Enforce engine purity
+        run: pnpm dep:cruise
+
+      - name: Test
+        run: pnpm test
+
+      - name: Rulepack hash is current
+        run: |
+          pnpm --filter @fc/rulepack lock
+          git diff --exit-code packages/rulepack/data/v1.lock.json \
+            || (echo "::error::rulepack data changed without regenerating the lock. Run: pnpm --filter @fc/rulepack lock" && exit 1)
+
+      - name: Build web
+        run: pnpm web:build
+
+      # TODO(W1): cdk synth + cdk-nag once the stacks land
+      # TODO(W3): pnpm eval:run --sample 40 && pnpm eval:assert
+      #   eval:assert fails the build if detection precision or recall regress
+      #   against eval/baseline.json — a regression gate on domain correctness.

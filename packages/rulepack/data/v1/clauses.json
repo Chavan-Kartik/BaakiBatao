@@ -1,0 +1,231 @@
+{
+  "_comment": "Every finding the engine emits must carry a clause ID from this file, or it is not a finding — it is an opinion, and it belongs in the unresolved bucket. Clause text is quoted verbatim in the UI and in the reconsideration letter, never paraphrased.",
+
+  "AME.EXCL.PHARMA": {
+    "clauseId": "AME.EXCL.PHARMA",
+    "source": "IRDAI/HLT/REG/CIR/151/06/2020",
+    "sourceDate": "2020-06-11",
+    "paragraph": "3(i)",
+    "text": "Cost of pharmacy and consumables may not be part of the definition of associate medical expenses.",
+    "effect": "EXCLUDE_FROM_AME",
+    "appliesFrom": "2020-10-01",
+    "appliesToExistingOnRenewalFrom": "2021-04-01",
+    "citationUrl": "https://irdai.gov.in/en/document-detail?documentId=394680"
+  },
+
+  "AME.EXCL.IMPLANT": {
+    "clauseId": "AME.EXCL.IMPLANT",
+    "source": "IRDAI/HLT/REG/CIR/151/06/2020",
+    "sourceDate": "2020-06-11",
+    "paragraph": "3(ii)",
+    "text": "Cost of implants and medical devices may not be part of the definition of associate medical expenses.",
+    "effect": "EXCLUDE_FROM_AME",
+    "appliesFrom": "2020-10-01",
+    "appliesToExistingOnRenewalFrom": "2021-04-01",
+    "citationUrl": "https://irdai.gov.in/en/document-detail?documentId=394680"
+  },
+
+  "AME.EXCL.DIAG": {
+    "clauseId": "AME.EXCL.DIAG",
+    "source": "IRDAI/HLT/REG/CIR/151/06/2020",
+    "sourceDate": "2020-06-11",
+    "paragraph": "3(iii)",
+    "text": "Cost of diagnostics may not be part of the definition of associate medical expenses.",
+    "effect": "EXCLUDE_FROM_AME",
+    "appliesFrom": "2020-10-01",
+    "appliesToExistingOnRenewalFrom": "2021-04-01",
+    "citationUrl": "https://irdai.gov.in/en/document-detail?documentId=394680"
+  },
+
+  "PD.LIMIT": {
+    "clauseId": "PD.LIMIT",
+    "source": "IRDAI/HLT/REG/CIR/151/06/2020",
+    "sourceDate": "2020-06-11",
+    "paragraph": "4",
+    "text": "Insurers shall not recover any expenses towards proportionate deductions other than the defined associate medical expenses.",
+    "effect": "BOUNDS_PROPORTIONATE_RECOVERY",
+    "appliesFrom": "2020-10-01",
+    "appliesToExistingOnRenewalFrom": "2021-04-01",
+    "citationUrl": "https://irdai.gov.in/en/document-detail?documentId=394680"
+  },
+
+  "PD.ICU": {
+    "clauseId": "PD.ICU",
+    "source": "IRDAI/HLT/REG/CIR/151/06/2020",
+    "sourceDate": "2020-06-11",
+    "paragraph": "5",
+    "text": "Proportionate deduction may not be applied in respect of ICU charges, as ICU categories do not exist.",
+    "effect": "IMMUNE_TO_PROPORTIONATE",
+    "appliesFrom": "2020-10-01",
+    "appliesToExistingOnRenewalFrom": "2021-04-01",
+    "citationUrl": "https://irdai.gov.in/en/document-detail?documentId=394680"
+  },
+
+  "PD.DIFFBILL": {
+    "clauseId": "PD.DIFFBILL",
+    "source": "IRDAI/HLT/REG/CIR/151/06/2020",
+    "sourceDate": "2020-06-11",
+    "paragraph": "6",
+    "text": "Proportionate deduction may not be applied in respect of hospitals which do not follow differential billing based on room category.",
+    "effect": "REQUIRES_DIFFERENTIAL_BILLING",
+    "appliesFrom": "2020-10-01",
+    "appliesToExistingOnRenewalFrom": "2021-04-01",
+    "citationUrl": "https://irdai.gov.in/en/document-detail?documentId=394680"
+  },
+
+  "PD.NOCLAUSE": {
+    "clauseId": "PD.NOCLAUSE",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "This policy wording contains no proportionate-deduction clause, so no proportionate deduction can be applied under it.",
+    "effect": "BOUNDS_PROPORTIONATE_RECOVERY",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "TAT.PREAUTH": {
+    "clauseId": "TAT.PREAUTH",
+    "source": "Master Circular on Health Insurance Business",
+    "sourceDate": "2024-05-29",
+    "paragraph": null,
+    "text": "The insurer shall decide on a cashless pre-authorisation request within one hour of receipt.",
+    "effect": "TURNAROUND_TIME",
+    "appliesFrom": "2024-05-29",
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": "https://caalley.com/irda24/Master_Circular_on_Health_Insurance_Business_29052024.pdf"
+  },
+
+  "TAT.DISCHARGE": {
+    "clauseId": "TAT.DISCHARGE",
+    "source": "Master Circular on Health Insurance Business",
+    "sourceDate": "2024-05-29",
+    "paragraph": null,
+    "text": "The insurer shall grant final authorisation for discharge within three hours of the request from the hospital.",
+    "effect": "TURNAROUND_TIME",
+    "appliesFrom": "2024-05-29",
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": "https://caalley.com/irda24/Master_Circular_on_Health_Insurance_Business_29052024.pdf"
+  },
+
+  "TAT.NOWAIT": {
+    "clauseId": "TAT.NOWAIT",
+    "source": "Master Circular on Health Insurance Business",
+    "sourceDate": "2024-05-29",
+    "paragraph": null,
+    "text": "In no case shall the policyholder be made to wait to be discharged. Where there is a delay beyond three hours, the additional amount charged by the hospital shall be borne by the insurer from the shareholder's fund.",
+    "effect": "TURNAROUND_TIME",
+    "appliesFrom": "2024-05-29",
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": "https://caalley.com/irda24/Master_Circular_on_Health_Insurance_Business_29052024.pdf"
+  },
+
+  "LIMIT.ROOM": {
+    "clauseId": "LIMIT.ROOM",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "Room rent is payable up to the per-day limit stated in the policy schedule.",
+    "effect": "CAP",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "LIMIT.ICU": {
+    "clauseId": "LIMIT.ICU",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "ICU charges are payable up to the per-day limit stated in the policy schedule.",
+    "effect": "CAP",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "COPAY.PCT": {
+    "clauseId": "COPAY.PCT",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "The policyholder shall bear the co-payment percentage stated in the policy schedule on each admissible claim.",
+    "effect": "COPAY",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "DEDUCT.AMT": {
+    "clauseId": "DEDUCT.AMT",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "The deductible stated in the policy schedule shall be borne by the policyholder before the insurer's liability begins.",
+    "effect": "DEDUCTIBLE",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "SI.EXHAUSTED": {
+    "clauseId": "SI.EXHAUSTED",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "The insurer's liability in aggregate shall not exceed the sum insured stated in the policy schedule.",
+    "effect": "SUM_INSURED",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "NP.ITEM.ANNEXURE_II": {
+    "clauseId": "NP.ITEM.ANNEXURE_II",
+    "source": "Master Circular on Health Insurance Business",
+    "sourceDate": "2024-05-29",
+    "paragraph": "Annexure II",
+    "text": "Items listed as non-payable are not admissible unless a rider or endorsement on this policy expressly covers them.",
+    "effect": "NON_PAYABLE",
+    "appliesFrom": "2024-05-29",
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": "https://caalley.com/irda24/Master_Circular_on_Health_Insurance_Business_29052024.pdf"
+  },
+
+  "NP.RIDER.COVERED": {
+    "clauseId": "NP.RIDER.COVERED",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "An endorsement on this policy expressly covers this item, so the non-payable list does not apply to it.",
+    "effect": "PAYABLE_IF_PART_OF_TREATMENT",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "ADM.NOTINFORCE": {
+    "clauseId": "ADM.NOTINFORCE",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "Cover is available only for an admission occurring within the policy period stated in the schedule.",
+    "effect": "ADMISSIBILITY",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
+  "ADM.WAITING.INITIAL": {
+    "clauseId": "ADM.WAITING.INITIAL",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "Claims arising within the initial waiting period stated in the schedule are not admissible, other than for accidental injury.",
+    "effect": "ADMISSIBILITY",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  }
+}
