@@ -190,7 +190,7 @@ three independent places so it cannot rot — ESLint `no-restricted-imports`, a
 code-review convention.
 
 ```bash
-pnpm dep:cruise      # 0 errors across 51 modules and 102 dependencies
+pnpm dep:cruise      # 0 errors across 55 modules and 145 dependencies
 ```
 
 Verified the hard way rather than assumed: a probe file importing `@aws-sdk/client-s3` and
