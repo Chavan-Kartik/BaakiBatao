@@ -1,0 +1,16 @@
+{
+  "name": "@fc/fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The reference claim pack. One source of truth for the golden test and the demo UI.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fc/contracts": "workspace:*",
+    "@fc/rulepack": "workspace:*"
+  }
+}

@@ -191,7 +191,7 @@ three independent places so it cannot rot — ESLint `no-restricted-imports`, a
 code-review convention.
 
 ```bash
-pnpm dep:cruise      # no violations across 56 modules and 147 dependencies
+pnpm dep:cruise      # no violations across 72 modules and 196 dependencies
 ```
 
 Verified the hard way rather than assumed: a probe file importing `@aws-sdk/client-s3` and
@@ -230,9 +230,11 @@ perfectly happy with it.
 ```
 
 The engine is compiled once and runs in **two** places: in Lambda as the authority, and in
-the browser for instant what-if simulation with no network round-trip. Change the room-rent
-limit in the UI and the whole waterfall re-runs locally. That is only possible because of
-the purity rule in claim 3.
+the browser, where the UI imports `reconstruct` and settles the reference claim on load with
+no network round-trip. Open the network tab and reload — you get the bundle and its fonts,
+and no request for a result. Interactive what-if, where editing the room-rent limit re-runs
+the whole waterfall locally, is the next step on that same foundation. Both are only
+possible because of the purity rule in claim 3.
 
 Why each service is there, one line each:
 
@@ -342,10 +344,11 @@ a clause against a line; it does not advise you on your rights.
 | `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 21 of ~60 line categories. |
 | `@fc/infra` | `CoreStack` — KMS, four buckets, single-table DynamoDB, SSM config. Clean `cdk-nag` report. Remaining stacks to come. |
 | `@fc/eval` | The end-to-end golden test above. Corpus generator and fault injection to come. |
+| `@fc/fixtures` | The reference claim pack, shared verbatim by the golden test and the UI. |
 | `@fc/functions` | The redaction boundary type. Handlers to come. |
-| `@fc/web` | Scaffold that proves the engine runs in the browser. |
+| `@fc/web` | The review UI. Settles the reference claim in the browser and shows the full ledger, the citations and the invariant. |
 
-`pnpm verify` is green: 7 packages typecheck, lint clean, 0 dependency errors, 35 tests
+`pnpm verify` is green: 8 packages typecheck, lint clean, 0 dependency violations, 35 tests
 passing. `pnpm cdk:synth` is green with no `cdk-nag` findings.
 
 ---

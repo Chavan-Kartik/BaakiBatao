@@ -1,0 +1,76 @@
+/**
+ * The design language is a legal instrument, not a dashboard.
+ *
+ * A reconsideration request is a document an insurer's grievance officer has to
+ * read and act on, so the UI is typeset like something printed: warm paper, one
+ * ink, generous measure, and a serif reserved for the figures under dispute.
+ * Colour is spent only where it carries meaning — one hue per ledger bucket —
+ * because a palette that decorates cannot also signal.
+ */
+@import '@fontsource/instrument-serif/400.css';
+@import '@fontsource/instrument-serif/400-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/jetbrains-mono/index.css';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  /* Warm greys. A neutral grey next to paper reads as cold and cheap. */
+  --color-paper: #fbfaf9;
+  --color-card: #ffffff;
+  --color-ink: #171614;
+  --color-ink-soft: #46433d;
+  --color-ink-muted: #78746c;
+  --color-ink-faint: #a8a39a;
+  --color-rule: #e7e3dc;
+  --color-rule-soft: #f1eee9;
+
+  /* One hue per bucket, and nowhere else. */
+  --color-disputed: #a32a1c;
+  --color-disputed-soft: #fdf3f1;
+  --color-defended: #4a4741;
+  --color-defended-soft: #f4f2ee;
+  --color-unresolved: #8a6310;
+  --color-unresolved-soft: #fdf6e9;
+
+  --radius-card: 0.5rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Inter's contextual alternates fix the 1/l ambiguity in clause IDs. */
+    font-feature-settings: 'cv05' 1, 'cv08' 1, 'calt' 1;
+  }
+
+  /* Money must align vertically down a column or it cannot be scanned. */
+  table,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: #dbd5c8;
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility numeric {
+  font-variant-numeric: tabular-nums;
+}
