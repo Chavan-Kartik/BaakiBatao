@@ -46,7 +46,14 @@ jobs:
       - name: Build web
         run: pnpm web:build
 
-      # TODO(W1): cdk synth + cdk-nag once the stacks land
+      # Synth needs no credentials — the stack is env-agnostic in CI. cdk-nag
+      # runs as an Aspect, and AwsSolutionsChecks raises errors rather than
+      # warnings, so an unreviewed finding fails the build here. Suppressions
+      # live in the stack with their reasons.
+      - name: Synth infrastructure and run cdk-nag
+        run: pnpm cdk:synth --quiet
+        env:
+          CDK_DISABLE_CLI_TELEMETRY: '1'
       # TODO(W3): pnpm eval:run --sample 40 && pnpm eval:assert
       #   eval:assert fails the build if detection precision or recall regress
       #   against eval/baseline.json — a regression gate on domain correctness.

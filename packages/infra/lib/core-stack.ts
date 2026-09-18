@@ -9,6 +9,7 @@ import {
   ObjectOwnership,
 } from 'aws-cdk-lib/aws-s3';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { NagSuppressions } from 'cdk-nag';
 import type { Construct } from 'constructs';
 
 /**
@@ -21,10 +22,24 @@ export class CoreStack extends Stack {
   readonly rawBucket: Bucket;
   readonly redactedBucket: Bucket;
   readonly artifactsBucket: Bucket;
+  readonly logsBucket: Bucket;
   readonly documentKey: Key;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    // S3 server access logs for the three data buckets. Deliberately SSE-S3 and
+    // not the customer-managed key: S3 log delivery writes here directly, and a
+    // CMK on the target bucket is the usual reason logging silently stops.
+    this.logsBucket = new Bucket(this, 'AccessLogsBucket', {
+      encryption: BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      lifecycleRules: [{ id: 'expire-access-logs', expiration: Duration.days(30) }],
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
 
     // Customer-managed key for claim documents, which are the only genuinely
     // sensitive thing in the system.
@@ -45,6 +60,8 @@ export class CoreStack extends Stack {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
       eventBridgeEnabled: true,
+      serverAccessLogsBucket: this.logsBucket,
+      serverAccessLogsPrefix: 'raw/',
       lifecycleRules: [{ id: 'expire-raw-uploads', expiration: Duration.days(1) }],
       cors: [
         {
@@ -64,6 +81,8 @@ export class CoreStack extends Stack {
       enforceSSL: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      serverAccessLogsBucket: this.logsBucket,
+      serverAccessLogsPrefix: 'redacted/',
       lifecycleRules: [{ id: 'expire-redacted', expiration: Duration.days(7) }],
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
@@ -75,6 +94,8 @@ export class CoreStack extends Stack {
       enforceSSL: true,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      serverAccessLogsBucket: this.logsBucket,
+      serverAccessLogsPrefix: 'artifacts/',
       versioned: true,
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
@@ -115,5 +136,50 @@ export class CoreStack extends Stack {
       description:
         'Minimum cosine margin between the top two category candidates. Calibrated, not guessed.',
     });
+
+    this.suppressReviewedNagFindings();
+  }
+
+  /**
+   * Every suppression here is a finding we looked at and decided against, with
+   * the reason recorded. None of them are blanket rule disables.
+   *
+   * Spec: build spec §23
+   */
+  private suppressReviewedNagFindings(): void {
+    NagSuppressions.addResourceSuppressions(this.logsBucket, [
+      {
+        id: 'AwsSolutions-S1',
+        reason:
+          'This is the server access log destination. Pointing it at itself is circular and S3 rejects it; the recursion is the reason the rule cannot apply to a log bucket.',
+      },
+    ]);
+
+    // CDK synthesises these two Lambda-backed custom resources itself, for
+    // S3 EventBridge notifications and for autoDeleteObjects. Their roles are
+    // framework-owned, so we cannot swap the managed policy or narrow the
+    // wildcard without forking the construct.
+    for (const path of [
+      '/FcCoreStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource',
+      '/FcCoreStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role',
+    ]) {
+      NagSuppressions.addResourceSuppressionsByPath(
+        this,
+        path,
+        [
+          {
+            id: 'AwsSolutions-IAM4',
+            reason:
+              'CDK-generated custom resource role. AWSLambdaBasicExecutionRole is attached by the framework and is not ours to replace.',
+          },
+          {
+            id: 'AwsSolutions-IAM5',
+            reason:
+              'CDK-generated custom resource role. The wildcard is scoped to the buckets this stack owns and is emitted by the framework.',
+          },
+        ],
+        true,
+      );
+    }
   }
 }

@@ -10,6 +10,8 @@ build/
 # CDK
 cdk.out/
 .cdk.staging/
+# local CLI preferences, not project context
+cdk.context.json
 
 # env & secrets
 .env

@@ -10,6 +10,7 @@
     "@aws-cdk/aws-iam:minimizePolicies": true,
     "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
     "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
+    "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
     "@aws-cdk/aws-lambda:useCdkManagedLogGroup": true,
     "fc:primaryRegion": "ap-south-1",
     "fc:bedrockRegion": "ap-south-1"
