@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shared types and runtime schemas. The seam between both engineers — frozen early, changed only by agreement.",
+  "description": "Shared types and runtime schemas. The frozen seam every other package builds against.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

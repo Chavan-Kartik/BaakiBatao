@@ -36,7 +36,7 @@ module.exports = {
     },
     {
       name: 'contracts-depends-on-nothing',
-      comment: 'contracts is the seam between both engineers. It must stay dependency-free.',
+      comment: 'contracts is the seam every other package builds against. It must stay dependency-free.',
       severity: 'error',
       from: { path: '^packages/contracts' },
       to: { path: '^packages/(?!contracts)' },

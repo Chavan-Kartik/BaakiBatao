@@ -17,7 +17,7 @@ Normalisation is a three-tier cascade, and the model is the last resort:
 |---|---|---|
 | 1 | DynamoDB lexicon, exact then trigram | exact hit, or similarity ≥ 0.92 with a single candidate |
 | 2 | Titan Text Embeddings V2, cosine kNN over ~60 category centroids | `cos(top1) − cos(top2) ≥ τ` |
-| 3 | Claude, tool-use with a JSON schema, choices restricted to the top-5 embedding candidates, `n = 3` at temperature 0.3 | all three samples agree |
+| 3 | Claude on Amazon Bedrock, tool-use with a JSON schema, choices restricted to the top-5 embedding candidates, `n = 3` at temperature 0.3 | all three samples agree |
 
 Neither accepted signal is the model's opinion of itself:
 

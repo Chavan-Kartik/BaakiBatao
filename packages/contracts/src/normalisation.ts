@@ -11,7 +11,7 @@ export const NormTier = z.enum([
   'LEXICON', // exact alias hit — confidence 1.00
   'LEXICON_FUZZY', // trigram similarity ≥ 0.92, single candidate
   'EMBEDDING', // Titan kNN, accepted on top1−top2 margin ≥ τ
-  'LLM', // Claude tie-break, n=3 unanimous
+  'LLM', // Claude on Amazon Bedrock, tie-break, n=3 unanimous
   'UNRESOLVED', // margin below τ, or a split vote
 ]);
 export type NormTier = z.infer<typeof NormTier>;
