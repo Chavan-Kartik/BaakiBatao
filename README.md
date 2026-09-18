@@ -248,9 +248,12 @@ If you have ten minutes and want to judge whether this is real, read these four 
 this order:
 
 1. **[`packages/contracts/src/finding.ts`](packages/contracts/src/finding.ts)** — the
-   central data structure. Note that a `Finding` *cannot be constructed* without a clause
-   ID. That single type constraint is what makes "we never assert without a citation"
-   structural rather than aspirational.
+   central data structure. A `Finding` may omit its clause ID **only** when its bucket is
+   `UNRESOLVED`; the engine asserts `findingIsWellFormed` at construction and throws
+   otherwise. So a verdict of "correctly applied" or "incorrectly applied" cannot exist
+   without a citation. That is what makes "we never assert without a clause" structural
+   rather than aspirational — and note the seven `UnresolvedReason` values, each of which
+   also names the document that would settle it.
 2. **[`packages/engine/src/reconcile/invariant.ts`](packages/engine/src/reconcile/invariant.ts)** —
    the load-bearing claim, about 60 lines.
 3. **[`packages/rulepack/data/v1/clauses.json`](packages/rulepack/data/v1/clauses.json)** —
