@@ -346,7 +346,7 @@ a clause against a line; it does not advise you on your rights.
 | `@fc/eval` | The end-to-end golden test above. Corpus generator and fault injection to come. |
 | `@fc/fixtures` | The reference claim pack, shared verbatim by the golden test and the UI. |
 | `@fc/functions` | The redaction boundary type. Handlers to come. |
-| `@fc/web` | The review UI. Settles the reference claim in the browser and shows the full ledger, the citations and the invariant. |
+| `@fc/web` | Case-review product UI. Settles the reference claim in-browser; bill table + finding inspector. |
 
 `pnpm verify` is green: 8 packages typecheck, lint clean, 0 dependency violations, 35 tests
 passing. `pnpm cdk:synth` is green with no `cdk-nag` findings.
