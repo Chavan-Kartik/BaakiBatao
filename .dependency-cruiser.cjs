@@ -49,8 +49,20 @@ module.exports = {
     },
     {
       name: 'no-orphans',
+      comment:
+        'A file nothing imports is either dead or a missing wire-up. Tool configs and the ' +
+        'package entry points named in each package.json "exports" are consumed from outside ' +
+        'the graph, so they are not orphans in any meaningful sense.',
       severity: 'warn',
-      from: { orphan: true, pathNot: ['\\.d\\.ts$', '(^|/)tsconfig\\.json$'] },
+      from: {
+        orphan: true,
+        pathNot: [
+          '\\.d\\.ts$',
+          '(^|/)tsconfig\\.json$',
+          '\\.config\\.(ts|js|cjs|mjs)$',
+          '(^|/)src/index\\.ts$',
+        ],
+      },
       to: {},
     },
   ],
