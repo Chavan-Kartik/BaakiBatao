@@ -23,23 +23,34 @@
     "aliases": ["icu charges", "itu", "intensive care", "icu bed", "critical care unit", "hdu"]
   },
 
-  "PHARMACY_CONSUMABLE": {
-    "categoryId": "PHARMACY_CONSUMABLE",
-    "label": "Pharmacy and consumables",
+  "_comment_PHARMACY": "Split from consumables deliberately. Circular 151/06/2020 §3(i) excludes 'pharmacy and consumables' from AME as one phrase, so both categories carry AME.EXCL.PHARMA. But they differ on the independent question of payability: prescribed drugs administered during treatment are payable, while disposables are the classic Annexure II item a consumables rider exists to buy back. One combined category would have had to pick one answer, and picking 'non-payable' would mean telling every policyholder their medicines were lawfully disallowed. Note what is NOT here: neither category claims the alias 'pharmacy & consumables'. A bill line billed as that single lump genuinely is ambiguous between a payable and a non-payable category, so it must route to UNRESOLVED / AMBIGUOUS_DESCRIPTION and be corrected against the hospital's itemisation. Giving the alias to either category would resolve the ambiguity by fiat in whichever direction we happened to choose.",
+
+  "PHARMACY": {
+    "categoryId": "PHARMACY",
+    "label": "Pharmacy / medicines",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.PHARMA",
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": ["pharmacy", "medicines", "drugs", "chemist", "medical store", "pharmacy charges"]
+  },
+
+  "CONSUMABLE": {
+    "categoryId": "CONSUMABLE",
+    "label": "Consumables and disposables",
     "ameEligible": false,
     "ameExclusionClause": "AME.EXCL.PHARMA",
     "proportionateImmune": false,
     "annexure": "II",
     "riderCanCover": ["CONSUMABLES_RIDER"],
     "aliases": [
-      "pharmacy",
-      "medicines",
-      "drugs",
-      "drugs & consumables",
-      "chemist",
-      "medical store",
-      "pharmacy charges",
-      "consumables"
+      "consumables",
+      "disposables",
+      "surgical disposables",
+      "surgical consumables",
+      "cotton and gauze",
+      "syringes"
     ]
   },
 

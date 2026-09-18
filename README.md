@@ -53,7 +53,8 @@ deductible ₹10,000 · co-pay 10% · consumables rider in force
 | Surgeon's fee | ₹35,000 |
 | Anaesthetist's fee | ₹12,000 |
 | Operation theatre charges | ₹13,000 |
-| Pharmacy & consumables | ₹98,000 |
+| Pharmacy | ₹78,000 |
+| Surgical consumables | ₹20,000 |
 | Implants — drug-eluting stent | ₹1,20,000 |
 | Diagnostics — labs, imaging | ₹56,000 |
 | Medical records & administrative charges | ₹7,000 |
@@ -69,7 +70,7 @@ Reconciling the ₹2,06,680 that was deducted:
 | Bucket | Amount | Why |
 |---|---|---|
 | ✅ **Correctly applied** | **₹84,480** | ₹7,000 administrative charges, non-payable under Annexure II with no rider covering them · ₹20,000 room rent above the per-day cap · ₹24,000 proportionate deduction on the surgeon, anaesthetist and OT fees, which genuinely *are* associated medical expenses · ₹10,000 deductible · ₹23,480 co-pay |
-| ❌ **Incorrectly applied** | **₹1,19,200** | The 40% was also applied to pharmacy (₹39,200 · `AME.EXCL.PHARMA`), implants (₹48,000 · `AME.EXCL.IMPLANT`), diagnostics (₹22,400 · `AME.EXCL.DIAG`) and ICU charges (₹9,600 · `PD.ICU`). The circular says it may not be. |
+| ❌ **Incorrectly applied** | **₹1,19,200** | The 40% was also applied to pharmacy and consumables (₹31,200 + ₹8,000 · `AME.EXCL.PHARMA`), implants (₹48,000 · `AME.EXCL.IMPLANT`), diagnostics (₹22,400 · `AME.EXCL.DIAG`) and ICU charges (₹9,600 · `PD.ICU`). The circular says it may not be. |
 | ⚠️ **Unresolved** | **₹3,000** | An "OTHER DEDUCTIONS" line on the sheet with no stated basis. We do not guess. The letter asks the insurer to explain it. |
 
 `84,480 + 1,19,200 + 3,000 = 2,06,680.` It balances exactly, and it is not allowed not to —
@@ -338,13 +339,13 @@ a clause against a line; it does not advise you on your rights.
 |---|---|
 | `@fc/contracts` | **Complete.** The frozen seam. Changes need a version bump. |
 | `@fc/engine` | **All seven step reducers implemented**, plus the interpreter, `Paise` arithmetic and the reconciliation invariant. |
-| `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 20 of ~60 line categories. |
+| `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 21 of ~60 line categories. |
 | `@fc/infra` | `CoreStack` — KMS, four buckets, single-table DynamoDB, SSM config. Clean `cdk-nag` report. Remaining stacks to come. |
 | `@fc/eval` | The end-to-end golden test above. Corpus generator and fault injection to come. |
 | `@fc/functions` | The redaction boundary type. Handlers to come. |
 | `@fc/web` | Scaffold that proves the engine runs in the browser. |
 
-`pnpm verify` is green: 7 packages typecheck, lint clean, 0 dependency errors, 29 tests
+`pnpm verify` is green: 7 packages typecheck, lint clean, 0 dependency errors, 35 tests
 passing. `pnpm cdk:synth` is green with no `cdk-nag` findings.
 
 ---

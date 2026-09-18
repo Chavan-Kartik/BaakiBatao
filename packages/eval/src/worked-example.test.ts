@@ -45,7 +45,12 @@ const LINES: readonly Line[] = [
   { desc: 'Surgeon Fee', category: 'SURGEON_FEE', claimed: 35_000, paid: 21_000, reason: 'PROP-DEDUCT' },
   { desc: 'Anaesthetist Fee', category: 'ANAESTHETIST_FEE', claimed: 12_000, paid: 7_200, reason: 'PROP-DEDUCT' },
   { desc: 'OT Charges', category: 'OT_CHARGE', claimed: 13_000, paid: 7_800, reason: 'PROP-DEDUCT' },
-  { desc: 'Pharmacy and Consumables', category: 'PHARMACY_CONSUMABLE', claimed: 98_000, paid: 58_800, reason: 'PROP-DEDUCT' },
+  // Billed separately, as an itemised bill should. Both are exempt from
+  // proportionate deduction under the same clause, but they differ on
+  // payability: the medicines are payable outright, and the disposables are an
+  // Annexure II item that only the consumables rider buys back.
+  { desc: 'Pharmacy', category: 'PHARMACY', claimed: 78_000, paid: 46_800, reason: 'PROP-DEDUCT' },
+  { desc: 'Surgical Consumables', category: 'CONSUMABLE', claimed: 20_000, paid: 12_000, reason: 'PROP-DEDUCT' },
   { desc: 'Drug Eluting Stent', category: 'IMPLANT_DEVICE', claimed: 120_000, paid: 72_000, reason: 'PROP-DEDUCT' },
   { desc: 'Laboratory and Imaging', category: 'DIAGNOSTICS', claimed: 56_000, paid: 33_600, reason: 'PROP-DEDUCT' },
   { desc: 'Medical Records and Administrative Charges', category: 'ADMIN_CHARGE', claimed: 7_000, paid: 0, reason: 'NON-PAYABLE ANNEXURE II' },
@@ -118,18 +123,56 @@ describe('the worked example from the README', () => {
    * so the amounts matter as much as the clause IDs.
    */
   it.each([
-    ['AME.EXCL.PHARMA', 'Pharmacy and Consumables', 39_200],
-    ['AME.EXCL.IMPLANT', 'Drug Eluting Stent', 48_000],
-    ['AME.EXCL.DIAG', 'Laboratory and Imaging', 22_400],
-    ['PD.ICU', 'ICU Charges (2 days)', 9_600],
-  ])('disputes %s worth of proportionate deduction under %s', (clauseId, desc, rupees) => {
+    ['AME.EXCL.PHARMA', 39_200],
+    ['AME.EXCL.IMPLANT', 48_000],
+    ['AME.EXCL.DIAG', 22_400],
+    ['PD.ICU', 9_600],
+  ])('disputes proportionate deduction worth %s under that clause', (clauseId, rupees) => {
     const found = result.findings.filter(
       (f) => f.clauseId === clauseId && f.bucket === 'INCORRECTLY_APPLIED',
     );
 
-    expect(found, `no INCORRECTLY_APPLIED finding cites ${clauseId}`).toHaveLength(1);
-    expect(found[0]?.amount).toBe(-R(rupees));
-    expect(lineDescription(found[0]?.lineRef ?? null)).toBe(desc);
+    expect(found.length, `no INCORRECTLY_APPLIED finding cites ${clauseId}`).toBeGreaterThan(0);
+    expect(found.reduce((sum, f) => sum + f.amount, 0)).toBe(-R(rupees));
+
+    // Every dispute is pinned to a specific bill line, because the letter
+    // quotes the clause against the line rather than against the claim.
+    for (const f of found) {
+      expect(lineDescription(f.lineRef ?? null)).toBeTruthy();
+    }
+  });
+
+  /**
+   * The split that makes the pharmacy figure add up from two different routes.
+   * Medicines were payable outright; the disposables were Annexure II and only
+   * survived step 3 because the consumables rider bought them back. Both then
+   * reach step 5 and are exempt from proportionate deduction under one clause.
+   */
+  it('disputes pharmacy and consumables separately under the same clause', () => {
+    const byLine = new Map(
+      result.findings
+        .filter((f) => f.clauseId === 'AME.EXCL.PHARMA' && f.bucket === 'INCORRECTLY_APPLIED')
+        .map((f) => [lineDescription(f.lineRef ?? null), f.amount]),
+    );
+
+    expect(byLine.get('Pharmacy')).toBe(-R(31_200));
+    expect(byLine.get('Surgical Consumables')).toBe(-R(8_000));
+  });
+
+  /**
+   * Exemption from proportionate deduction does not make a line payable. The
+   * rider is what makes the consumables payable, and without it step 3 would
+   * lawfully cut them in full — which is the §3 trap the whole waterfall exists
+   * to avoid falling into.
+   */
+  it('does not cut the consumables under Annexure II, because the rider covers them', () => {
+    const annexureCuts = result.findings.filter(
+      (f) => f.clauseId === 'NP.ITEM.ANNEXURE_II' && f.lineRef !== null,
+    );
+
+    expect(annexureCuts.map((f) => lineDescription(f.lineRef))).toEqual([
+      'Medical Records and Administrative Charges',
+    ]);
   });
 
   it('defends the deductions the insurer was entitled to make', () => {
@@ -267,7 +310,7 @@ function buildInput(): ReconstructInput {
           riderId: 'CONSUMABLES_RIDER',
           label: 'Consumables cover',
           effectiveFrom: '2026-04-01',
-          coversCategories: ['PHARMACY_CONSUMABLE' as CategoryId],
+          coversCategories: ['CONSUMABLE' as CategoryId],
         },
       ],
 
@@ -281,7 +324,8 @@ function buildInput(): ReconstructInput {
         'OT_CHARGE',
         'NURSING_CHARGE',
         'DOCTOR_VISIT',
-        'PHARMACY_CONSUMABLE',
+        'PHARMACY',
+        'CONSUMABLE',
         'IMPLANT_DEVICE',
         'DIAGNOSTICS',
         'ICU_CHARGE',
