@@ -36,22 +36,27 @@ and cite chapter and verse when they are crossed.
 
 ## What it actually produces
 
-A worked example, end to end. The arithmetic below is exactly what the seven steps produce
-for this input; the step reducers that automate it are typed stubs as of Day 1, so treat
-this as the target behaviour, specified precisely, not as a recorded run.
+A worked example, end to end. Every figure below is a **passing assertion**, not
+illustration: [`worked-example.test.ts`](packages/eval/src/worked-example.test.ts) runs this
+claim through the real engine and checks each rupee, so a change to a step, a clause, or
+the step order that would alter these numbers fails the build rather than quietly making
+this page wrong.
 
-**Policy:** sum insured ₹5,00,000 · room rent limit ₹6,000/day · deductible ₹10,000 · co-pay 10%
+**Policy:** sum insured ₹5,00,000 · room rent limit ₹6,000/day · ICU limit ₹15,000/day ·
+deductible ₹10,000 · co-pay 10% · consumables rider in force
 **Admission:** 7 days — 2 in ICU, 5 in a Deluxe room billed at ₹10,000/day
 
 | Bill line | Amount |
 |---|---|
 | Room rent — Deluxe, 5 days @ ₹10,000 | ₹50,000 |
 | ICU — 2 days @ ₹12,000 | ₹24,000 |
-| Surgeon, anaesthetist, OT | ₹60,000 |
+| Surgeon's fee | ₹35,000 |
+| Anaesthetist's fee | ₹12,000 |
+| Operation theatre charges | ₹13,000 |
 | Pharmacy & consumables | ₹98,000 |
 | Implants — drug-eluting stent | ₹1,20,000 |
 | Diagnostics — labs, imaging | ₹56,000 |
-| Non-payable items (Annexure II) | ₹7,000 |
+| Medical records & administrative charges | ₹7,000 |
 | **Bill total** | **₹4,15,000** |
 
 The patient took a room at ₹10,000 against a ₹6,000 eligibility, so the insurer applied a
@@ -63,17 +68,25 @@ Reconciling the ₹2,06,680 that was deducted:
 
 | Bucket | Amount | Why |
 |---|---|---|
-| ✅ **Correctly applied** | **₹84,480** | ₹7,000 non-payable items · ₹20,000 room rent above the per-day cap · ₹24,000 proportionate deduction on professional fees, which genuinely *are* associated medical expenses · ₹10,000 deductible · ₹23,480 co-pay |
+| ✅ **Correctly applied** | **₹84,480** | ₹7,000 administrative charges, non-payable under Annexure II with no rider covering them · ₹20,000 room rent above the per-day cap · ₹24,000 proportionate deduction on the surgeon, anaesthetist and OT fees, which genuinely *are* associated medical expenses · ₹10,000 deductible · ₹23,480 co-pay |
 | ❌ **Incorrectly applied** | **₹1,19,200** | The 40% was also applied to pharmacy (₹39,200 · `AME.EXCL.PHARMA`), implants (₹48,000 · `AME.EXCL.IMPLANT`), diagnostics (₹22,400 · `AME.EXCL.DIAG`) and ICU charges (₹9,600 · `PD.ICU`). The circular says it may not be. |
 | ⚠️ **Unresolved** | **₹3,000** | An "OTHER DEDUCTIONS" line on the sheet with no stated basis. We do not guess. The letter asks the insurer to explain it. |
 
 `84,480 + 1,19,200 + 3,000 = 2,06,680.` It balances exactly, and it is not allowed not to —
 see [the invariant](#1-the-arithmetic-cannot-be-fudged) below.
 
-**Recoverable: ₹1,07,280**, not ₹1,19,200. The difference matters and is the reason this
-reconstructs the entire settlement rather than auditing lines in isolation: once the
-unlawful ₹1,19,200 is added back, the 10% co-pay lawfully applies to it too. Claiming the
-gross figure would be wrong, and an insurer would be right to reject it.
+**The shortfall is ₹1,10,280, and it splits into two different kinds of ask.**
+
+**₹1,07,280 we argue with a citation** — not the gross ₹1,19,200. This difference is the
+reason the system reconstructs an entire settlement instead of auditing lines in
+isolation: once the unlawful ₹1,19,200 is added back to the payable base, the policy's 10%
+co-pay lawfully applies to it too, which is ₹11,920 of it. Demanding the gross figure
+would be wrong, and an insurer would be right to refuse it.
+
+**₹3,000 we can only query.** No clause was cited for it and our reconstruction does not
+cut it, so the letter asks the insurer to explain that line rather than asserting a rule
+about it. Merging it into the headline number would be the easy thing to do and would make
+the whole document less defensible.
 
 The output is a certificate and a drafted reconsideration request that quotes each clause
 verbatim against the specific line it contradicts.
@@ -324,15 +337,15 @@ a clause against a line; it does not advise you on your rights.
 | Package | State |
 |---|---|
 | `@fc/contracts` | **Complete.** The frozen seam. Changes need a version bump. |
-| `@fc/engine` | Interpreter, `Paise` arithmetic and the reconciliation invariant implemented and tested. The seven step reducers are typed stubs carrying their specs. |
+| `@fc/engine` | **All seven step reducers implemented**, plus the interpreter, `Paise` arithmetic and the reconciliation invariant. |
 | `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 20 of ~60 line categories. |
-| `@fc/infra` | `CoreStack` — KMS, three buckets, single-table DynamoDB, SSM config. Remaining stacks to come. |
-| `@fc/eval` | Scaffold. Corpus generator and fault injection to come. |
+| `@fc/infra` | `CoreStack` — KMS, four buckets, single-table DynamoDB, SSM config. Clean `cdk-nag` report. Remaining stacks to come. |
+| `@fc/eval` | The end-to-end golden test above. Corpus generator and fault injection to come. |
 | `@fc/functions` | The redaction boundary type. Handlers to come. |
 | `@fc/web` | Scaffold that proves the engine runs in the browser. |
 
-`pnpm verify` is green: 7 packages typecheck, lint clean, 0 dependency errors (2 orphan
-warnings on files not yet wired up), 14 tests passing.
+`pnpm verify` is green: 7 packages typecheck, lint clean, 0 dependency errors, 29 tests
+passing. `pnpm cdk:synth` is green with no `cdk-nag` findings.
 
 ---
 

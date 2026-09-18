@@ -6,11 +6,12 @@ import type {
   Rulepack,
   StepResult,
 } from '@fc/contracts';
-import { findingIsWellFormed } from '@fc/contracts';
+import { ZERO, findingIsWellFormed } from '@fc/contracts';
 import type { LineState, ReducerContext, WaterfallState } from './state';
 import { sumAllowed, sumClaimed } from './state';
 import { resolveReducer } from './registry';
 import { balanceLedger } from './reconcile/invariant';
+import { matchDeductionSheet } from './insurer';
 import { UncitedFindingError } from './errors';
 
 export interface ReconstructOptions {
@@ -39,6 +40,14 @@ export function reconstruct({ input, rulepack, now }: ReconstructOptions): Recon
   const findings: Finding[] = [];
   const steps: StepResult[] = [];
 
+  // Matched once, before the waterfall, so every step sees the same view of
+  // what the insurer did and two steps cannot disagree about it.
+  const insurer = matchDeductionSheet(
+    input.billTable,
+    input.deductionTable,
+    rulepack.rounding.matchTolerancePaise,
+  );
+
   for (const def of rulepack.steps) {
     const openingBalance = state.payable;
     const reducer = resolveReducer(def.reducer);
@@ -48,6 +57,8 @@ export function reconstruct({ input, rulepack, now }: ReconstructOptions): Recon
       policy: input.policy,
       admission: input.admission,
       params: def.params,
+      insurerByLine: insurer.byLine,
+      insurerClaimLevel: insurer.claimLevel,
     };
 
     const [next, produced] = reducer(state, ctx);
@@ -113,9 +124,14 @@ export function initialState(input: ReconstructInput, rulepack: Rulepack): Water
       lineRef: row.lineRef,
       rawDescription: row.rawDescription,
       categoryId: norm?.categoryId ?? null,
+      // A bill row with no normalisation result at all is treated exactly like
+      // one the cascade gave up on, rather than being quietly waved through.
+      normTier: norm?.tier ?? 'UNRESOLVED',
+      normConfidence: norm?.confidence ?? 0,
       claimed: row.amountClaimed,
       allowed: row.amountClaimed,
       deductedBy: [],
+      insurerAttributed: ZERO,
       unresolved: false,
       proportionateImmune: category?.proportionateImmune ?? false,
     };
