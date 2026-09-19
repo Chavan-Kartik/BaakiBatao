@@ -2,36 +2,31 @@
  * @fc/eval — the harness that turns "a demo" into "a system with a measured
  * error rate".
  *
- * The shape of the work (the build spec §20):
- *
- *   generate/  seeded claim packs. Each pack is settled by our OWN engine to
- *              produce a lawful deduction sheet, so ground truth is exact by
- *              construction rather than annotated by hand.
- *
- *   faults/    injected on top of that lawful settlement, so every unlawful
- *              rupee has a known clause ID and a known amount:
- *                pd-on-pharma      → AME.EXCL.PHARMA
- *                pd-on-implant     → AME.EXCL.IMPLANT
- *                pd-on-diag        → AME.EXCL.DIAG
- *                pd-on-icu         → PD.ICU
- *                pd-no-diffbill    → PD.DIFFBILL
- *                pd-over-recovery  → PD.LIMIT
- *
- *   faults/controls/  LAWFUL cuts the engine must NOT flag. This is the
- *              important half — anyone can build something that flags
- *              deductions; proving we do not flag a lawful sub-limit cut is
- *              what separates a reconstructor from the blanket classifier.
- *
- *   score/     per-clause precision and recall, the false-positive rate on the
- *              control set, and the τ calibration curve.
+ * Local-only evaluation (§20.1 steps 1–4, §20.2, §20.6): seeded pack
+ * generation, six unlawful fault operators, lawful controls, and per-clause
+ * precision/recall scoring. Rendering/degradation to PDF (§20.1 steps 5–6) and
+ * the τ calibration sweep (§20.7) need AWS / a labelled split and are tracked
+ * as follow-ups, not silent gaps — see EVAL_TODO.
  */
+export * from './types';
+export { generatePack } from './generate/generator';
+export { injectFaults, ALL_FAULT_KINDS } from './faults/inject';
+export { scorePacks, scorePacksDetailed } from './score/confusion';
+export type { ScoreDetail, FaultOutcome } from './score/confusion';
+export { compareToBaseline, toBaseline } from './score/baseline';
+export type { Baseline } from './score/baseline';
+export { runEval, generateFaultedPack, formatSummary, AS_OF } from './run';
 
 export const EVAL_TODO = [
-  'generate/index.ts — seeded pack generator',
   'generate/degrade.ts — rotate, noise, JPEG artefacts (a clean PDF is a cheat)',
-  'faults/*.ts — six unlawful operators',
-  'faults/controls/*.ts — four lawful controls',
-  'score/confusion.ts — per-clause precision/recall + control FP rate',
-  'score/calibrate.ts — sweep τ, emit the calibration curve',
-  'cli.ts — generate | run | report | calibrate',
+  'score/calibrate.ts — sweep τ, emit the calibration curve (§20.7)',
 ] as const;
+
+/**
+ * Prerequisites for EVAL_TODO[1]: a τ sweep needs per-line truth ("this
+ * description is a CONSUMABLE"), not the pack-level clause labels the fault
+ * harness produces, so it waits on the §20.7 labelled split.
+ */
+export const CALIBRATION_PREREQ =
+  'needs a held-out labelled split of normalisation decisions (§20.7), which the fault harness does not provide';
+

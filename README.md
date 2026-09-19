@@ -114,6 +114,17 @@ pnpm dep:cruise      # enforces engine purity — see claim 3 below
 pnpm test
 ```
 
+The detection-rate gate, which needs no AWS account either — it generates its own corpus
+from integer seeds, injects faults with known clause IDs and amounts, and scores the engine:
+
+```bash
+pnpm eval:generate   # build the seeded corpus, no engine, no scoring
+pnpm eval:run        # generate + faults + engine + score; add --count 200 for the full sweep
+pnpm eval:report     # the run, plus one row per fault with what the engine cited
+pnpm eval:assert     # fail if detection regressed against packages/eval/baseline.json
+pnpm eval:baseline   # deliberately re-record the baseline, with a note in the commit
+```
+
 After editing anything under `packages/rulepack/data/`:
 
 ```bash
@@ -138,7 +149,7 @@ Money is a branded integer `Paise` type, never a float. A raw `number` cannot be
 where an amount is expected.
 
 ```bash
-pnpm test --filter @fc/engine     # fast-check asserts the invariant over 500 generated ledgers
+pnpm --filter @fc/engine test   # fast-check asserts the invariant over 500 generated ledgers
 ```
 
 → [`packages/engine/src/reconcile/invariant.ts`](packages/engine/src/reconcile/invariant.ts) · [ADR 001](docs/decisions/001-money-as-integer-paise.md)
@@ -341,15 +352,30 @@ a clause against a line; it does not advise you on your rights.
 |---|---|
 | `@fc/contracts` | **Complete.** The frozen seam. Changes need a version bump. |
 | `@fc/engine` | **All seven step reducers implemented**, plus the interpreter, `Paise` arithmetic and the reconciliation invariant. |
-| `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 21 of ~60 line categories. |
-| `@fc/infra` | `CoreStack` — KMS, four buckets, single-table DynamoDB, SSM config. Clean `cdk-nag` report. Remaining stacks to come. |
-| `@fc/eval` | The end-to-end golden test above. Corpus generator and fault injection to come. |
+| `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 20 of ~60 line categories. |
+| `@fc/infra` | `CoreStack` — KMS, four buckets, single-table DynamoDB, SSM config. `WebStack` — CloudFront in front of a private bucket, the public URL. Clean `cdk-nag` report. Remaining stacks to come. |
+| `@fc/eval` | Seeded corpus generator, six unlawful fault operators, lawful controls, per-clause precision/recall and the `eval:assert` regression gate. Rendering and degradation still to come. |
 | `@fc/fixtures` | The reference claim pack, shared verbatim by the golden test and the UI. |
 | `@fc/functions` | The redaction boundary type. Handlers to come. |
 | `@fc/web` | Case-review product UI. Settles the reference claim in-browser; bill table + finding inspector. |
 
-`pnpm verify` is green: 8 packages typecheck, lint clean, 0 dependency violations, 35 tests
-passing. `pnpm cdk:synth` is green with no `cdk-nag` findings.
+`pnpm verify` is green: 8 packages typecheck, lint clean, 0 dependency violations, 44 tests
+passing. `pnpm cdk:synth` is green with no `cdk-nag` findings. `pnpm eval:assert` is green.
+
+### What the detection numbers are, and are not
+
+Over 200 seeded packs with 170 injected faults, every fault is attributed to the clause it
+violates — precision and recall **1.00** per clause — and **no** lawful deduction in the
+control set is disputed. Those are the two failure modes that matter: a missed unlawful
+deduction, and a lawful one called unlawful.
+
+Read that as exactly what it is. The packs are generated and their rows are **perfectly
+extracted** — the engine is being measured, not Textract — and the lawful baseline is
+settled by the same rules the engine enforces, so this proves the waterfall attributes
+known rupees to the right clauses and nothing more. It is not evidence about real Indian
+hospital billing, and [`fixtures/corpus/PROVENANCE.md`](fixtures/corpus/PROVENANCE.md)
+says so at length. The number we can defend today is the number of ways the engine can be
+wrong that we have already excluded, and the gate is what keeps that list from shrinking.
 
 ---
 

@@ -21,6 +21,27 @@ The generation pipeline is:
    degrade — rotate ±1.2°, gaussian noise, JPEG quality 62, occasional 2px shear.
 6. Assemble the degraded pages into PDFs.
 
+## Status
+
+Steps 1–4 above are implemented, in `packages/eval`, and run locally with no AWS
+credentials:
+
+| Step | Where | State |
+|---|---|---|
+| 1 sample policy | `src/generate/policy.ts` | done — sum insured, room/ICU caps, co-pay, deductible, rider ~30% of the time |
+| 2 sample bill | `src/generate/bill.ts` | done — canonical categories; the room rate is what creates a proportionate ratio, and ICU is sampled inside its cap so a PD fault on it reaches step 5 rather than step 4 |
+| 3 settle it lawfully | `src/generate/settle.ts` | done — steps 3–6 of the waterfall, as data, so ground truth is exact by construction. Two settlements are produced, with and without the differential-billing gate, so a fault that flips an admission fact can still be injected into a sheet that is lawful under the facts the engine will see |
+| 4 inject faults | `src/faults/` | done — six unlawful operators with a known clause and amount, plus the zero-fault control set |
+| 5 render and degrade | — | **not implemented.** Rendering to HTML/CSS, rasterising, rotating, noising and the PDFs still have to be built, and they are what make the extraction layer real rather than assumed |
+| 6 assemble PDFs | — | **not implemented**, for the same reason |
+
+Because steps 5–6 are outstanding, there is no `fixtures/corpus/` content in git yet
+and the `.gitignore` rules for it are ahead of the code. Until they land, the
+detection numbers in `packages/eval/baseline.json` measure the engine against
+**perfectly extracted** rows: they prove the waterfall attributes known unlawful
+rupees to the right clauses, and they say nothing yet about OCR confidence,
+low-confidence routing or human correction.
+
 ## Why the degradation step exists
 
 A clean digital PDF is a cheat. If Textract never struggles, the extraction layer goes

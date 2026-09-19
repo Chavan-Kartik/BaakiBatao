@@ -1,0 +1,58 @@
+{
+  "packs": 200,
+  "faults": 170,
+  "detected": 170,
+  "controlPassRate": 1,
+  "controlFalsePositiveRate": 0,
+  "perClause": [
+    {
+      "clauseId": "AME.EXCL.DIAG",
+      "tp": 33,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "clauseId": "AME.EXCL.IMPLANT",
+      "tp": 11,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "clauseId": "AME.EXCL.PHARMA",
+      "tp": 34,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "clauseId": "PD.DIFFBILL",
+      "tp": 55,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "clauseId": "PD.ICU",
+      "tp": 4,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "clauseId": "PD.LIMIT",
+      "tp": 33,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    }
+  ],
+  "generatedAt": "2026-09-18T17:36:03.267Z"
+}

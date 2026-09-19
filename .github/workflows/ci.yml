@@ -54,6 +54,12 @@ jobs:
         run: pnpm cdk:synth --quiet
         env:
           CDK_DISABLE_CLI_TELEMETRY: '1'
-      # TODO(W3): pnpm eval:run --sample 40 && pnpm eval:assert
-      #   eval:assert fails the build if detection precision or recall regress
-      #   against eval/baseline.json — a regression gate on domain correctness.
+      # The domain-correctness gate. `eval:assert` regenerates 200 seeded claim
+      # packs, injects 0–3 known faults into each, settles them through the real
+      # engine, and fails the build if detection precision or recall regresses
+      # against packages/eval/baseline.json — or if a lawful deduction starts
+      # being disputed. Every number is against a generated corpus with injected
+      # faults, never a claim about real-world accuracy
+      # (fixtures/corpus/PROVENANCE.md).
+      - name: Evaluation regression gate
+        run: pnpm eval:assert

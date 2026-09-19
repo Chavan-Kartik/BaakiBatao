@@ -20,6 +20,8 @@
     "eval:generate": "pnpm --filter @fc/eval exec tsx src/cli.ts generate",
     "eval:run": "pnpm --filter @fc/eval exec tsx src/cli.ts run",
     "eval:report": "pnpm --filter @fc/eval exec tsx src/cli.ts report",
+    "eval:assert": "pnpm --filter @fc/eval exec tsx src/cli.ts assert",
+    "eval:baseline": "pnpm --filter @fc/eval exec tsx src/cli.ts baseline",
     "eval:calibrate": "pnpm --filter @fc/eval exec tsx src/cli.ts calibrate",
     "web:dev": "pnpm --filter @fc/web dev",
     "web:build": "pnpm --filter @fc/web build",
