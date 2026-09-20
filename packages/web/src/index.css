@@ -2,6 +2,7 @@
  * Product UI tokens — dense claims workspace, not a marketing page.
  */
 @import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/geist/index.css';
 @import '@fontsource-variable/jetbrains-mono/index.css';
 @import 'tailwindcss';
 @import "tw-animate-css";
@@ -13,6 +14,7 @@
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --font-geist: 'Geist Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 
   --color-canvas: #f4f5f7;
   --color-surface: #ffffff;
@@ -241,4 +243,49 @@
   100% {
     background-position: 200% 0;
   }
+}
+/* Landing intro (components/extras/intro-loader.tsx). Durations arrive as
+   custom properties from the component so the JS unmount and the CSS agree. */
+@keyframes intro-letter {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes intro-cursor {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes intro-cursor-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes intro-wipe {
+  to {
+    transform: translateX(134vw);
+  }
+}
+
+.intro-letter {
+  animation: intro-letter 1ms linear forwards;
+}
+
+.intro-cursor {
+  animation:
+    intro-cursor var(--intro-scan) forwards,
+    intro-cursor-out 220ms ease-out var(--intro-scan) forwards;
+}
+
+.intro-panel {
+  will-change: transform;
+  animation: intro-wipe var(--intro-wipe) cubic-bezier(0.76, 0, 0.24, 1) var(--intro-wipe-delay) forwards;
 }

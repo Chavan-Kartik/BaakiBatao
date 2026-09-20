@@ -276,12 +276,32 @@ pnpm cdk -- bootstrap aws://$(aws sts get-caller-identity --query Account --outp
 
 ### 4.4 Permissions the deploying identity needs
 
-For a sandbox, `AdministratorAccess` is the honest answer. For anything shared, the deploy
-role needs CloudFormation, IAM (to create the function roles), S3, KMS, DynamoDB, SSM,
-Secrets Manager, CloudFront, Lambda, Logs, States, SNS, SQS, Cognito, API Gateway,
-CloudWatch and — for the pipeline's own roles to be granted them — Textract, Comprehend and
-Bedrock. CDK's bootstrap roles carry most of this; the deploying identity mainly needs
-`sts:AssumeRole` on `cdk-hnb659fds-*-role-*` in the account.
+For a sandbox, `AdministratorAccess` is the honest answer. For anything shared, the
+deploying identity needs surprisingly little, because CDK's bootstrap roles do the actual
+resource creation: `sts:AssumeRole` on `cdk-hnb659fds-*-role-*`, enough to run `bootstrap`
+once (the `CDKToolkit` stack, its roles, its assets bucket, its SSM version parameter), and
+whatever you want for day-to-day operation (start a sweep, bump a parameter, read logs).
+
+[`docs/permission-set.json`](permission-set.json) is that policy, as an IAM Identity Center
+permission set's inline policy — nothing in it is `*` on a resource except the read-only
+describe/log/metric actions that have no resource ARN. To create it:
+
+```bash
+INSTANCE=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
+PS=$(aws sso-admin create-permission-set --instance-arn "$INSTANCE" --name FcDeploy \
+      --description "Deploy and operate the settlement reconstructor" --session-duration PT8H \
+      --query 'PermissionSet.PermissionSetArn' --output text)
+aws sso-admin put-inline-policy-to-permission-set --instance-arn "$INSTANCE" \
+      --permission-set-arn "$PS" --inline-policy file://docs/permission-set.json
+# then assign it to your user on the sandbox account in the Identity Center console,
+# and pick "FcDeploy" when `aws configure sso --profile fc` asks for the role.
+```
+
+Two notes on scope. The deploy roles it assumes are the ones `cdk bootstrap` creates, and
+those are broad by design (they create IAM roles for the Lambdas); tightening them is a
+bootstrap-template exercise, not a permission-set one. And the `bootstrap` statements can be
+dropped from the policy once the account is bootstrapped — the deploy path never touches
+them again.
 
 ### 4.5 Synthesise, diff, deploy
 

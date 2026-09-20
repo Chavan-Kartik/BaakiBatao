@@ -58,7 +58,12 @@ export function RegulatoryMarquee() {
       <span>·</span>
       <span className="flex items-center gap-2">
         <span className="size-1.5 rounded-full bg-disputed" />
-        FY2024-25 Insurers disallowed ₹18,521 crore (13.98% of claimed amount)
+        FY2024-25 Insurers disallowed ₹18,521 crore (13.98% of claimed amount, up from 12.90%)
+      </span>
+      <span>·</span>
+      <span className="flex items-center gap-2">
+        <span className="size-1.5 rounded-full bg-unresolved" />
+        3.26 crore health claims settled in FY2024-25 · IRDAI Annual Report, Table I.29
       </span>
       <span>·</span>
       <span className="flex items-center gap-2">

@@ -1,0 +1,111 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WhoAmI",
+      "Effect": "Allow",
+      "Action": ["sts:GetCallerIdentity"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CdkDeployAssumesBootstrapRoles",
+      "Effect": "Allow",
+      "Action": ["sts:AssumeRole"],
+      "Resource": [
+        "arn:aws:iam::*:role/cdk-hnb659fds-deploy-role-*",
+        "arn:aws:iam::*:role/cdk-hnb659fds-file-publishing-role-*",
+        "arn:aws:iam::*:role/cdk-hnb659fds-image-publishing-role-*",
+        "arn:aws:iam::*:role/cdk-hnb659fds-lookup-role-*"
+      ]
+    },
+    {
+      "Sid": "CdkBootstrapToolkitStack",
+      "Effect": "Allow",
+      "Action": ["cloudformation:*"],
+      "Resource": ["arn:aws:cloudformation:ap-south-1:*:stack/CDKToolkit/*"]
+    },
+    {
+      "Sid": "CdkBootstrapRolesAndPolicies",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:UpdateRole", "iam:TagRole", "iam:UntagRole",
+        "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
+        "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:ListAttachedRolePolicies", "iam:ListRolePolicies",
+        "iam:CreatePolicy", "iam:DeletePolicy", "iam:GetPolicy", "iam:CreatePolicyVersion", "iam:DeletePolicyVersion", "iam:ListPolicyVersions",
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/cdk-hnb659fds-*",
+        "arn:aws:iam::*:policy/cdk-hnb659fds-*"
+      ]
+    },
+    {
+      "Sid": "CdkBootstrapAssets",
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Resource": [
+        "arn:aws:s3:::cdk-hnb659fds-assets-*",
+        "arn:aws:s3:::cdk-hnb659fds-assets-*/*"
+      ]
+    },
+    {
+      "Sid": "CdkBootstrapContainerAssets",
+      "Effect": "Allow",
+      "Action": ["ecr:CreateRepository", "ecr:DeleteRepository", "ecr:DescribeRepositories", "ecr:SetRepositoryPolicy", "ecr:GetRepositoryPolicy", "ecr:PutLifecyclePolicy", "ecr:PutImageTagMutability", "ecr:TagResource", "ecr:PutImageScanningConfiguration"],
+      "Resource": ["arn:aws:ecr:ap-south-1:*:repository/cdk-hnb659fds-container-assets-*"]
+    },
+    {
+      "Sid": "CdkBootstrapVersionParameter",
+      "Effect": "Allow",
+      "Action": ["ssm:PutParameter", "ssm:GetParameter", "ssm:GetParameters", "ssm:DeleteParameter"],
+      "Resource": ["arn:aws:ssm:ap-south-1:*:parameter/cdk-bootstrap/hnb659fds/*"]
+    },
+    {
+      "Sid": "ReadStacksAndOutputs",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeStacks", "cloudformation:DescribeStackEvents", "cloudformation:DescribeStackResources",
+        "cloudformation:ListStacks", "cloudformation:GetTemplate", "cloudformation:ListStackResources",
+        "cloudformation:DescribeChangeSet", "cloudformation:ListChangeSets"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "OperateRuntimeConfig",
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath", "ssm:PutParameter"],
+      "Resource": ["arn:aws:ssm:ap-south-1:*:parameter/fc/*"]
+    },
+    {
+      "Sid": "OperatePipelines",
+      "Effect": "Allow",
+      "Action": [
+        "states:StartExecution", "states:DescribeExecution", "states:ListExecutions", "states:GetExecutionHistory",
+        "states:DescribeStateMachine", "states:ListStateMachines", "states:StopExecution"
+      ],
+      "Resource": [
+        "arn:aws:states:ap-south-1:*:stateMachine:fc-*",
+        "arn:aws:states:ap-south-1:*:execution:fc-*:*",
+        "arn:aws:states:ap-south-1:*:express:fc-*:*:*"
+      ]
+    },
+    {
+      "Sid": "OperateArtifactsAndLogs",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket", "s3:GetObject", "s3:ListAllMyBuckets",
+        "logs:DescribeLogGroups", "logs:DescribeLogStreams", "logs:GetLogEvents", "logs:FilterLogEvents", "logs:StartQuery", "logs:GetQueryResults",
+        "cloudwatch:GetDashboard", "cloudwatch:ListDashboards", "cloudwatch:DescribeAlarms", "cloudwatch:GetMetricData",
+        "sqs:GetQueueAttributes", "sqs:ReceiveMessage",
+        "xray:GetTraceSummaries", "xray:BatchGetTraces", "xray:GetServiceGraph"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockPreflight",
+      "Effect": "Allow",
+      "Action": ["bedrock:ListFoundationModels", "bedrock:GetFoundationModel", "bedrock:ListInferenceProfiles"],
+      "Resource": "*"
+    }
+  ]
+}
