@@ -78,5 +78,9 @@ export const FailureCode = z.enum([
   'INVARIANT_VIOLATED',
   'BEDROCK_THROTTLED',
   'MODEL_UNAVAILABLE',
+  /** This deployment has no extractor for the uploaded format (Textract not wired). */
+  'EXTRACTOR_UNAVAILABLE',
+  /** Storage or runtime failed mid-pipeline. Nothing was adjudicated; the message says where. */
+  'PIPELINE_INTERNAL',
 ]);
 export type FailureCode = z.infer<typeof FailureCode>;

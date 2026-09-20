@@ -35,6 +35,14 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'api',
+      root: './packages/api',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+    },
+  },
+  {
+    test: {
       name: 'functions',
       root: './packages/functions',
       environment: 'node',

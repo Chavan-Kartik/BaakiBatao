@@ -1,6 +1,6 @@
 import type { CaseView } from '../lib/case';
 import { inr } from '../lib/format';
-import { Money } from './ui';
+import { Money } from './primitives';
 
 export function CaseHeader({ view }: { view: CaseView }) {
   const held = view.result.reconciliation.invariantHeld;
@@ -13,7 +13,7 @@ export function CaseHeader({ view }: { view: CaseView }) {
             <h1 className="truncate text-[15px] font-semibold tracking-tight text-text">
               Case review
             </h1>
-            <span className="rounded-sm bg-accent-soft px-1.5 py-0.5 font-mono text-[11px] text-accent">
+            <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 font-mono text-[11px] text-brand">
               reconstructed
             </span>
             <span
@@ -34,7 +34,7 @@ export function CaseHeader({ view }: { view: CaseView }) {
 
         <button
           type="button"
-          className="inline-flex h-8 shrink-0 items-center rounded-sm bg-accent px-3 text-[12px] font-medium text-white hover:bg-accent/90"
+          className="inline-flex h-8 shrink-0 items-center rounded-sm bg-brand px-3 text-[12px] font-medium text-white hover:bg-brand/90"
         >
           Draft reconsideration
         </button>

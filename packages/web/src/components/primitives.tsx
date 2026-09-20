@@ -52,7 +52,7 @@ export function Money({
       className={cn(
         'font-medium tracking-tight',
         tone === 'disputed' && 'text-disputed',
-        tone === 'accent' && 'text-accent',
+        tone === 'accent' && 'text-brand',
         tone === 'muted' && 'text-text-3',
         className,
       )}
@@ -109,13 +109,13 @@ export function FilterChip({
       className={cn(
         'inline-flex h-7 items-center gap-1.5 rounded-sm border px-2 text-[12px] transition-colors',
         active
-          ? 'border-accent bg-accent-soft text-accent'
+          ? 'border-brand bg-brand-soft text-brand'
           : 'border-border bg-surface text-text-2 hover:bg-hover',
       )}
     >
       {children}
       {count !== undefined && (
-        <span className={cn('font-mono text-[11px]', active ? 'text-accent' : 'text-text-3')}>
+        <span className={cn('font-mono text-[11px]', active ? 'text-brand' : 'text-text-3')}>
           {count}
         </span>
       )}

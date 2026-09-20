@@ -102,7 +102,22 @@ the deterministic core runs entirely in your browser.
 ```bash
 pnpm install
 pnpm verify          # typecheck · lint · dep:cruise · test
-pnpm web:dev         # http://localhost:5173
+pnpm dev             # API on http://localhost:3000 + UI on http://localhost:5173
+```
+
+The UI proxies `/api` to the API process, so sign-in cookies stay first-party. Create an
+account, **New case → Load demo pack → Reconstruct settlement**, and watch the pipeline run:
+validate → classify → extract → redact → normalise → reconstruct → certificate. Four of the
+demo's lines come back *uncategorised* — the real tier-1 normaliser declines "Room Rent -
+Deluxe (5 days)" rather than guessing — and the correction grid re-runs the case to the
+worked example's figures. `#/demo` settles the same claim in the browser with no server.
+
+Or in containers (Docker Desktop running):
+
+```bash
+docker compose up                    # api + Vite dev server
+docker compose --profile prod up     # api + nginx-served bundle on :8080
+docker compose run --rm verify       # the CI gate in a box
 ```
 
 Individual checks:
@@ -299,6 +314,7 @@ packages/
   engine/      the pure waterfall: interpreter, 7 steps, the invariant
   rulepack/    rules as data: clauses, categories, step order, rounding policy
   normalise/   tier 1 of the normalisation cascade — the lexicon, exact and trigram-fuzzy
+  api/         sign-in (better-auth), cases, uploads, the pipeline runner, events, certificates
   eval/        corpus generation, fault injection, degradation, detection-rate harness
   functions/   thin Lambda handlers — all logic lives in engine/
   infra/       AWS CDK
@@ -362,10 +378,11 @@ a clause against a line; it does not advise you on your rights.
 | `@fc/infra` | `CoreStack` — KMS, four buckets, single-table DynamoDB, SSM config. `WebStack` — CloudFront in front of a private bucket, the public URL. Clean `cdk-nag` report. Remaining stacks to come. |
 | `@fc/eval` | Seeded corpus over four admission archetypes, six unlawful fault operators with computed bounds, derived lawful controls, a data-level degradation profile, exact fault↔dispute assignment, the tier-1 threshold sweep, `docs/evaluation.md` and the two-profile `eval:assert` gate. PDF rendering still to come. |
 | `@fc/fixtures` | The reference claim pack, shared verbatim by the golden test and the UI. |
+| `@fc/api` | The product slice, locally: better-auth sign-in, `POST /cases` + typed uploads, the §11 pipeline as in-process stages emitting the contract's `CaseEvent`s over SSE, the checksum pause and correction resume, certificates and replay verification. Filesystem store and structured-JSON extractor behind interfaces; DynamoDB, S3, Textract and Bedrock plug in behind the same ones. |
 | `@fc/functions` | The redaction boundary type. Handlers to come. |
-| `@fc/web` | Case-review product UI. Settles the reference claim in-browser; bill table + finding inspector. |
+| `@fc/web` | Sign-in → cases → six typed dropzones → live pipeline → review with correction grid → certificate verify. The demo case still settles in-browser. |
 
-`pnpm verify` is green: 9 packages typecheck, lint clean, 0 dependency violations, 122 tests
+`pnpm verify` is green: 10 packages typecheck, lint clean, 0 dependency violations, 128 tests
 passing. `pnpm cdk:synth` is green with no `cdk-nag` findings. `pnpm eval:assert` is green.
 
 ### What the detection numbers are, and are not

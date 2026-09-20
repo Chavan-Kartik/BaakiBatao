@@ -1,0 +1,31 @@
+{
+  "name": "@fc/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The case API: sign-in, case creation and upload, the pipeline runner, events, certificates. Runs locally on Node with filesystem storage; the AWS stages plug in behind the same interfaces.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fc/contracts": "workspace:*",
+    "@fc/engine": "workspace:*",
+    "@fc/fixtures": "workspace:*",
+    "@fc/normalise": "workspace:*",
+    "@fc/rulepack": "workspace:*",
+    "@hono/node-server": "^1.14.0",
+    "better-auth": "^1.3.0",
+    "hono": "^4.7.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
+  }
+}

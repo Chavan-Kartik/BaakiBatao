@@ -1,0 +1,16 @@
+# Everything the image builds itself, or must never contain.
+node_modules
+**/node_modules
+**/dist
+**/cdk.out
+**/coverage
+.git
+.github
+.playwright-mcp
+.vite
+fixtures/originals
+**/unredacted
+*.log
+.env
+.env.*
+docker-compose.override.yml

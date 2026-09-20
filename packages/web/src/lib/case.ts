@@ -1,34 +1,45 @@
 /**
- * Settles the reference claim in the browser.
+ * Turns a reconstruction into what the review screen renders.
  *
- * This module is the whole architectural argument in one file: it imports
- * `reconstruct` from @fc/engine — the same module the Lambda authority runs —
- * and calls it directly. There is no fetch, no API client and no serialised
- * result baked at build time. If the engine had reached for the AWS SDK or a
- * Node built-in, this import would not resolve, which is why purity is
- * enforced by a required CI check rather than by convention.
+ * Two callers: the demo case, which settles the reference claim in the
+ * browser (this import of `reconstruct` from @fc/engine is the architectural
+ * argument in one line — the same module the API runs, with no fetch), and a
+ * case that came back from the API, whose input and result are already
+ * computed. Both produce the same view, so the screen does not know which.
  */
-import type { Finding, LineRef, Paise, Reconstruction, Rulepack } from '@fc/contracts';
+import type {
+  Finding,
+  LineRef,
+  Paise,
+  ReconstructInput,
+  Reconstruction,
+  Rulepack,
+} from '@fc/contracts';
 import { unsafePaise } from '@fc/contracts';
-import { reconstruct } from '@fc/engine';
-import { AS_OF, LINES, buildInput } from '@fc/fixtures';
+import { matchDeductionSheet, reconstruct } from '@fc/engine';
+import { AS_OF, buildInput } from '@fc/fixtures';
 import { loadRulepackV1 } from '@fc/rulepack';
 
 export interface LedgerRow {
   readonly index: number;
+  readonly lineRef: LineRef;
   readonly desc: string;
-  readonly category: string;
+  readonly category: string | null;
+  readonly tier: string;
   readonly claimed: Paise;
-  readonly insurerPaid: Paise;
+  /** Null when the deduction sheet had no row for this line. */
+  readonly insurerPaid: Paise | null;
   /** What the insurer withheld on this line, as a positive magnitude. */
   readonly insurerCut: Paise;
   readonly findings: readonly Finding[];
   /** Positive magnitudes, for display against a column header that carries the sign. */
   readonly disputed: Paise;
   readonly defended: Paise;
+  readonly unresolved: Paise;
 }
 
 export interface CaseView {
+  readonly input: ReconstructInput;
   readonly result: Reconstruction;
   readonly rulepack: Rulepack;
   readonly rows: readonly LedgerRow[];
@@ -51,53 +62,53 @@ export interface CaseView {
   readonly unexplained: Paise;
 }
 
-/** `doc-bill:1:7` → `7`. Findings carry the ref; the index is how we join. */
-function lineIndex(ref: LineRef | null): number | null {
-  if (ref === null) return null;
-  const parsed = Number(ref.split(':')[2]);
-  return Number.isInteger(parsed) ? parsed : null;
-}
-
 function sumWhere(findings: readonly Finding[], bucket: Finding['bucket']): Paise {
   return unsafePaise(
     findings.filter((f) => f.bucket === bucket).reduce((sum, f) => sum + Math.abs(f.amount), 0),
   );
 }
 
-export function buildCaseView(): CaseView {
-  const rulepack = loadRulepackV1();
-  const input = buildInput();
-  const result = reconstruct({ input, rulepack, now: AS_OF });
-
-  const byLine = new Map<number, Finding[]>();
+export function buildCaseView(
+  input: ReconstructInput,
+  result: Reconstruction,
+  rulepack: Rulepack,
+): CaseView {
+  const byLine = new Map<LineRef, Finding[]>();
   const claimLevel: Finding[] = [];
-
   for (const finding of result.findings) {
-    const index = lineIndex(finding.lineRef ?? null);
-    if (index === null) {
+    if (finding.lineRef === null) {
       claimLevel.push(finding);
       continue;
     }
-    const bucketed = byLine.get(index) ?? [];
+    const bucketed = byLine.get(finding.lineRef) ?? [];
     bucketed.push(finding);
-    byLine.set(index, bucketed);
+    byLine.set(finding.lineRef, bucketed);
   }
 
-  const rows: LedgerRow[] = LINES.map((line, index) => {
-    const findings = byLine.get(index) ?? [];
-    const claimed = unsafePaise(line.claimed * 100);
-    const insurerPaid = unsafePaise(line.paid * 100);
+  const insurer = matchDeductionSheet(
+    input.billTable,
+    input.deductionTable,
+    rulepack.rounding.matchTolerancePaise,
+  ).byLine;
+  const normalised = new Map(input.normalisedLines.map((n) => [n.lineRef, n]));
 
+  const rows: LedgerRow[] = input.billTable.rows.map((row, index) => {
+    const findings = byLine.get(row.lineRef) ?? [];
+    const theirs = insurer.get(row.lineRef);
+    const norm = normalised.get(row.lineRef);
     return {
       index,
-      desc: line.desc,
-      category: line.category,
-      claimed,
-      insurerPaid,
-      insurerCut: unsafePaise(claimed - insurerPaid),
+      lineRef: row.lineRef,
+      desc: row.rawDescription,
+      category: norm?.categoryId ?? null,
+      tier: norm?.tier ?? 'UNRESOLVED',
+      claimed: row.amountClaimed,
+      insurerPaid: theirs?.paid ?? null,
+      insurerCut: theirs?.deducted ?? unsafePaise(0),
       findings,
       disputed: sumWhere(findings, 'INCORRECTLY_APPLIED'),
       defended: sumWhere(findings, 'CORRECTLY_APPLIED'),
+      unresolved: sumWhere(findings, 'UNRESOLVED'),
     };
   });
 
@@ -115,6 +126,7 @@ export function buildCaseView(): CaseView {
   );
 
   return {
+    input,
     result,
     rulepack,
     rows,
@@ -130,4 +142,17 @@ export function buildCaseView(): CaseView {
     defendedTotal: unsafePaise(Math.abs(byBucket.CORRECTLY_APPLIED)),
     unexplained: unsafePaise(Math.abs(byBucket.UNRESOLVED)),
   };
+}
+
+/** The reference claim, settled here in the browser. */
+export function buildDemoCaseView(): CaseView {
+  const rulepack = loadRulepackV1();
+  const input = buildInput();
+  return buildCaseView(input, reconstruct({ input, rulepack, now: AS_OF }), rulepack);
+}
+
+/** A finding's line, for the panel. */
+export function describeLine(view: CaseView, ref: LineRef | null): string | null {
+  if (ref === null) return null;
+  return view.rows.find((r) => r.lineRef === ref)?.desc ?? null;
 }

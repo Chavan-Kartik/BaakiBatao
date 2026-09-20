@@ -62,4 +62,17 @@ A running list, for the Builder Center post.
 - **Fault matching has to be an assignment, not a greedy pass.** With two faults under one
   clause, the first fault can take the dispute the second needed and the harness scores a
   miss the engine never made. Three faults per pack keeps the exact search trivial.
+- **`node:sqlite` is invisible to Vite.** It is a prefix-only builtin, absent from
+  `builtinModules`, so vitest tried to resolve a package called `sqlite`. `createRequire`
+  loads it without a shim and the runtime is unchanged.
+- **An absolute upload URL is a cross-origin request.** The API printed
+  `http://localhost:3000/...` into the upload target; the browser at `127.0.0.1:5173` sent no
+  cookie and got a 401. Local targets are fetched by path through the proxy; presigned S3
+  targets are used verbatim — the client handles both.
+- **Correcting a bill description unpairs it from the deduction sheet.** The two documents
+  are joined on description and amount, so a fix to one side has to be applied to the row
+  it was matched to on the other, or the insurer's cut lands in the residual.
+- **`rename()` over an open file is EPERM on Windows**, especially in a OneDrive folder. The
+  atomic-write pattern needs a short retry loop there; the first pipeline run through the UI
+  died on the eleventh write.
 

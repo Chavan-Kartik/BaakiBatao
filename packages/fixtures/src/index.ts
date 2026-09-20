@@ -16,3 +16,5 @@ export {
   lineDescription,
 } from './worked-example';
 export type { FixtureLine } from './worked-example';
+export { buildDemoPack } from './worked-example-pack';
+export type { PackFile } from './worked-example-pack';

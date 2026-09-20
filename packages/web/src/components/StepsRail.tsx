@@ -2,7 +2,7 @@ import type { CaseView } from '../lib/case';
 import { inr } from '../lib/format';
 import { STEP_LABEL } from '../lib/labels';
 import { cn } from '../lib/utils';
-import { Panel } from './ui';
+import { Panel } from './primitives';
 
 export function StepsRail({ view }: { view: CaseView }) {
   return (

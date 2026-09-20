@@ -3,7 +3,7 @@ import type { CaseView, LedgerRow } from '../lib/case';
 import { inr } from '../lib/format';
 import { CATEGORY_LABEL } from '../lib/labels';
 import { cn } from '../lib/utils';
-import { Badge, FilterChip, Money, Panel } from './ui';
+import { Badge, FilterChip, Money, Panel } from './primitives';
 
 export type LineFilter = 'all' | Bucket;
 
@@ -132,14 +132,18 @@ function LineRow({
       <td className="px-3 py-2.5 align-top">
         <div className="font-medium text-text">{row.desc}</div>
         <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-text-3">
-          {CATEGORY_LABEL[row.category] ?? row.category}
+          {row.category === null ? (
+            <span className="text-unresolved">uncategorised · {row.tier.toLowerCase()}</span>
+          ) : (
+            (CATEGORY_LABEL[row.category] ?? row.category)
+          )}
         </div>
       </td>
       <td className="px-3 py-2.5 text-right align-top">
         <Money value={inr(row.claimed)} />
       </td>
       <td className="px-3 py-2.5 text-right align-top">
-        <Money value={inr(row.insurerPaid)} tone="muted" />
+        <Money value={row.insurerPaid === null ? '—' : inr(row.insurerPaid)} tone="muted" />
       </td>
       <td className="px-3 py-2.5 text-right align-top">
         <Money

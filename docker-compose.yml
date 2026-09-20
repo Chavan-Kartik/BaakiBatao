@@ -1,0 +1,81 @@
+# Local development and a production-shaped local run.
+#
+#   docker compose up                 api + web-dev (Vite with HMR on :5173, API on :3000)
+#   docker compose --profile prod up  api + web (nginx on :8080 serving the built bundle)
+#   docker compose run --rm verify    the CI gate
+#   docker compose run --rm eval run --count 200 --profile degraded
+#
+# The API keeps its SQLite auth database and case files in the `fc-data`
+# volume. BETTER_AUTH_SECRET must be set for the prod profile; the dev
+# default is refused outside NODE_ENV=development.
+
+services:
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: "3000"
+      FC_DATA_DIR: /data
+      FC_API_BASE_URL: ${FC_API_BASE_URL:-http://localhost:3000}
+      FC_TRUSTED_ORIGINS: ${FC_TRUSTED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080}
+      FC_EXTRACTOR: ${FC_EXTRACTOR:-structured}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+    volumes:
+      - fc-data:/data
+    ports:
+      - "3000:3000"
+
+  # Vite dev server against the bind-mounted source. node_modules stay in the
+  # image (pnpm's layout is symlinked per package), so each package's
+  # node_modules is shadowed by an anonymous volume rather than by the host.
+  web-dev:
+    build:
+      context: .
+      target: deps
+    command: pnpm --filter @fc/web dev --host 0.0.0.0 --port 5173
+    environment:
+      FC_API_URL: http://api:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/packages/api/node_modules
+      - /app/packages/contracts/node_modules
+      - /app/packages/engine/node_modules
+      - /app/packages/eval/node_modules
+      - /app/packages/fixtures/node_modules
+      - /app/packages/functions/node_modules
+      - /app/packages/infra/node_modules
+      - /app/packages/normalise/node_modules
+      - /app/packages/rulepack/node_modules
+      - /app/packages/web/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  web:
+    profiles: ["prod"]
+    build:
+      context: .
+      target: web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  verify:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: verify
+
+  eval:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: eval
+
+volumes:
+  fc-data:

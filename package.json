@@ -26,6 +26,8 @@
     "eval:doc": "pnpm --filter @fc/eval exec tsx src/cli.ts doc",
     "web:dev": "pnpm --filter @fc/web dev",
     "web:build": "pnpm --filter @fc/web build",
+    "api:dev": "pnpm --filter @fc/api dev",
+    "dev": "pnpm --parallel --filter @fc/api --filter @fc/web dev",
     "cdk": "pnpm --filter @fc/infra exec cdk",
     "cdk:synth": "pnpm --filter @fc/infra exec cdk synth",
     "deploy": "pnpm --filter @fc/infra exec cdk deploy --all",

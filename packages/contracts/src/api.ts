@@ -3,7 +3,8 @@ import { CaseId, LineRef } from './ids';
 import { CaseStatus, DocumentKind, FailureCode } from './pack';
 import { RoomCategory } from './policy';
 import { Paise } from './money';
-import { Reconstruction } from './reconstruction';
+import { ExtractedTable } from './extraction';
+import { ReconstructInput, Reconstruction } from './reconstruction';
 
 // POST /cases
 export const CreateCaseRequest = z.object({
@@ -33,6 +34,10 @@ export type CreateCaseResponse = z.infer<typeof CreateCaseResponse>;
 export const GetCaseResponse = z.object({
   caseId: CaseId,
   status: CaseStatus,
+  /** The bill as extracted, for the correction grid while the case is paused. */
+  extractedBill: ExtractedTable.nullable(),
+  /** Present once the case reaches RECONSTRUCTING; what the engine was given. */
+  input: ReconstructInput.nullable(),
   reconstruction: Reconstruction.nullable(),
   failure: z
     .object({
@@ -45,6 +50,15 @@ export const GetCaseResponse = z.object({
   correctionTaskToken: z.string().nullable(),
 });
 export type GetCaseResponse = z.infer<typeof GetCaseResponse>;
+
+// GET /cases — the signed-in user's cases, newest first
+export const CaseSummary = z.object({
+  caseId: CaseId,
+  status: CaseStatus,
+  createdAt: z.string().datetime(),
+  documents: z.array(DocumentKind),
+});
+export type CaseSummary = z.infer<typeof CaseSummary>;
 
 // POST /cases/{id}/corrections — resumes a paused Step Functions execution
 export const SubmitCorrectionsRequest = z.object({

@@ -1,9 +1,8 @@
 import type { Finding } from '@fc/contracts';
-import { lineDescription } from '@fc/fixtures';
-import type { CaseView } from '../lib/case';
+import { describeLine, type CaseView } from '../lib/case';
 import { inr, inrAbs } from '../lib/format';
 import { STEP_LABEL } from '../lib/labels';
-import { Badge, Money, Panel } from './ui';
+import { Badge, Money, Panel } from './primitives';
 
 export function FindingPanel({
   view,
@@ -24,7 +23,7 @@ export function FindingPanel({
           <div className="truncate">{title}</div>
           {row && (
             <div className="truncate font-mono text-[10px] font-normal text-text-3">
-              claimed {inr(row.claimed)} · paid {inr(row.insurerPaid)} · cut {inr(row.insurerCut)}
+              claimed {inr(row.claimed)} · paid {row.insurerPaid === null ? 'no sheet row' : inr(row.insurerPaid)} · cut {inr(row.insurerCut)}
             </div>
           )}
         </div>
@@ -65,7 +64,7 @@ export function FindingPanel({
 
 function FindingCard({ finding, view }: { finding: Finding; view: CaseView }) {
   const clause = finding.clauseId ? view.rulepack.clauses[finding.clauseId] : null;
-  const line = lineDescription(finding.lineRef ?? null);
+  const line = describeLine(view, finding.lineRef ?? null);
 
   return (
     <li className="px-4 py-3.5">
@@ -128,7 +127,7 @@ function Row({
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className={strong ? 'font-medium text-text' : 'text-text-2'}>{label}</dt>
-      <dd data-numeric className={strong ? 'font-semibold text-accent' : 'text-text'}>
+      <dd data-numeric className={strong ? 'font-semibold text-brand' : 'text-text'}>
         {value}
       </dd>
     </div>

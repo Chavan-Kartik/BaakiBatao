@@ -46,3 +46,6 @@ fixtures/originals/
 FINAL-PROJECT.md
 IMPLEMENTATION.md
 PROBLEM-STATEMENTS.md
+
+# Playwright MCP screenshots and snapshots
+.playwright-mcp/

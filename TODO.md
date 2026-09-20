@@ -1,9 +1,9 @@
   - Deterministic engine: ~90%
   - Rulepack/domain coverage: ~70%
   - Evaluation: ~65%
-  - Desktop UI: ~35%
+  - Desktop UI: ~60%
   - Mobile UI: ~5%
-  - AWS end-to-end product path: ~10%
+  - Product path (local, AWS-shaped): ~55% · AWS wiring: ~10%
   - Security/observability/deployment completion: ~15%
 
   ## What is already done
@@ -25,7 +25,15 @@
     lawful controls, exact fault↔dispute assignment, a data-level degradation profile
     routed through the real normaliser, miss attribution (gated / unmatched / engine), the
     tier-1 threshold calibration sweep, two-profile regression gate, `docs/evaluation.md`.
-  - Static React case-review UI using the real engine in-browser.
+  - `@fc/api`: better-auth sign-in, case creation with typed uploads, the §11 pipeline as
+    in-process stages emitting `CaseEvent`s over SSE, checksum pause + correction resume,
+    certificates with replay verification, per-owner access. Filesystem store and
+    structured-JSON extractor behind the `CaseStore` / `DocumentStorage` / `Extractor`
+    interfaces the AWS implementations will fill (docs/aws.md).
+  - Web: sign-in, cases list, six typed dropzones with "load demo pack", live pipeline view,
+    review with correction grid for uncategorised lines, certificate verify; the demo case
+    still settles in-browser.
+  - Dockerfile (deps · verify · api · eval · web targets) and docker-compose for dev/prod-shaped runs.
   - Basic CDK foundation: raw/redacted/artifact storage, KMS, DynamoDB, SSM configuration, CloudFront static hosting.
   - Local verification: typecheck, lint, dependency-cruiser, tests, both eval gates, web build,
     CDK synth with cdk-nag — all green on Node 24 / pnpm 11.
@@ -38,7 +46,9 @@
   - Calibration: the tier-1 fuzzy threshold is swept and the knee recorded (0.52 vs the §14
     default 0.92); the tier-2 embedding-margin τ waits on Titan.
   - AWS infrastructure has the foundation, but not the actual application pipeline.
-  - UI visually represents the planned product, but only the reference claim works today.
+  - UI: upload, pipeline, review, corrections and verify work against the local API; the
+    what-if panel, provenance crop viewer, waterfall bridge chart, letter download and the
+    rulepack screen are not built. Mobile composition not started.
 
   ## What remains, in the exact implementation path
 
@@ -87,15 +97,11 @@
 
   Implement the components named in IMPLEMENTATION.md:
 
-  - Upload and case creation.
-  - Pipeline progress screen.
-  - Human correction grid.
   - Waterfall bridge chart.
   - Three equal-weight bucket views.
   - Provenance crop viewer.
   - What-if controls.
-  - Browser-versus-Lambda verification.
-  - Certificate verification.
+  - Browser-versus-server verification of the what-if panel.
   - Letter download/share flow.
   - Rulepack/clauses screen.
 

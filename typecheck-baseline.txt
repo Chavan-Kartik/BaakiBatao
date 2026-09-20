@@ -1,0 +1,18 @@
+$ tsc --noEmit
+src/components/advanced-stats.tsx(4,34): error TS2307: Cannot find module './charts' or its corresponding type declarations.
+src/components/AvatarPicker.tsx(348,66): error TS2345: Argument of type 'Avatar | undefined' is not assignable to parameter of type 'Avatar | (() => Avatar)'.
+  Type 'undefined' is not assignable to type 'Avatar | (() => Avatar)'.
+src/components/tables/CasesDataTable.tsx(4,3): error TS1484: 'ColumnDef' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/tables/CasesDataTable.tsx(11,3): error TS1484: 'SortingState' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/ui/chart.tsx(97,3): error TS2339: Property 'payload' does not exist on type 'Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; allowEscapeViewBox?: AllowInDimension | undefined; ... 24 more ...; wrapperStyle?: CSSProperties | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }'.
+src/components/ui/chart.tsx(102,3): error TS2339: Property 'label' does not exist on type 'Omit<Props<ValueType, NameType>, PropertiesReadFromContext> & { active?: boolean | undefined; allowEscapeViewBox?: AllowInDimension | undefined; ... 24 more ...; wrapperStyle?: CSSProperties | undefined; } & ClassAttributes<...> & HTMLAttributes<...> & { ...; }'.
+src/components/ui/chart.tsx(156,23): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/ui/chart.tsx(156,29): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/components/ui/chart.tsx(225,39): error TS2344: Type '"verticalAlign" | "payload"' does not satisfy the constraint '"width" | "height" | "onError" | "children" | "offset" | "dangerouslySetInnerHTML" | "onCopy" | "onCopyCapture" | "onCut" | "onCutCapture" | "onPaste" | "onPasteCapture" | "onCompositionEnd" | ... 167 more ... | "portal"'.
+  Type '"payload"' is not assignable to type '"width" | "height" | "onError" | "children" | "offset" | "dangerouslySetInnerHTML" | "onCopy" | "onCopyCapture" | "onCut" | "onCutCapture" | "onPaste" | "onPasteCapture" | "onCompositionEnd" | ... 167 more ... | "portal"'.
+src/components/ui/chart.tsx(231,17): error TS2339: Property 'length' does not exist on type '{}'.
+src/components/ui/chart.tsx(237,16): error TS2339: Property 'map' does not exist on type '{}'.
+src/components/ui/chart.tsx(237,21): error TS7006: Parameter 'item' implicitly has an 'any' type.
+C:\Users\redma\OneDrive\Development\GitTree\settlement-reconstructor\packages\web:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @fc/web@0.1.0 typecheck: `tsc --noEmit`
+Exit status 2
