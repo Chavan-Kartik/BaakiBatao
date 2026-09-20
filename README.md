@@ -1,24 +1,57 @@
-# Settlement reconstructor
+# BaakiBatao
 
-**Your insurer sent you a deduction sheet. This tells you which parts of it are legal.**
+### बाकी बताओ · A Settlement Reconstructor
+> *बाकी बताओ* is what every Indian family says at a hospital discharge counter when the
+settlement letter does not add up. **Tell me the rest.**
 
-Upload your claim pack — itemised hospital bill, deduction sheet, settlement letter, policy
-schedule and wording. The system independently reconstructs what the settlement *should*
-have been as an ordered seven-step waterfall, then reconciles its own figure against what
-the insurer actually paid. Every rupee of difference lands in one of three buckets:
-**correctly applied**, **incorrectly applied** (with the clause it contradicts), or
-**unresolved** (with the reason we cannot decide).
+## Imagine that
+
+**Your insurer sent you a deduction sheet. This tells you which parts of it they can defend, which parts they cannot, and which parts nobody can yet explain.**
+
+Built for **Bharat Builds Tour: First Commit**, 17 to 20 September 2026 · **Track:** Ship It · **Team:** The Two-Pizza Team · Code `W932ZK`
+
+## How it works
+
+Upload your claim pack like:
+- Itemized hospital bill 
+- Deduction sheet 
+- Settlement letter 
+- Policy schedule and wording. 
+  
+The system independently reconstructs what the settlement *should* have been as an ordered seven-step waterfall, then reconciles its own figure against what the insurer actually paid. Every rupee of difference lands in one of three buckets: **Correctly applied**, **incorrectly applied** (With clauses it contradicts), or
+**unresolved** (with reasons we cannot decide).
 
 > We do not tell you your insurer cheated you. We tell you, line by line, which part of
 > your deduction we can defend, which part we can challenge, and which part we honestly
 > cannot judge.
 
-**Built for:** Bharat Builds Tour — First Commit, 17–20 Sept 2026 · **Track:** Ship It
+## Contents
 
-```
-pnpm install && pnpm dev          # local, no AWS: http://localhost:5173
-pnpm web:build && pnpm deploy     # AWS, one command, six stacks — docs/aws.md §0
-```
+- [BaakiBatao](#baakibatao)
+    - [बाकी बताओ · A Settlement Reconstructor](#बाकी-बताओ--a-settlement-reconstructor)
+  - [Imagine that](#imagine-that)
+  - [How it works](#how-it-works)
+  - [Contents](#contents)
+  - [Why this exists](#why-this-exists)
+  - [What it actually produces](#what-it-actually-produces)
+  - [How a claim moves through it](#how-a-claim-moves-through-it)
+    - [The state machine, state for state](#the-state-machine-state-for-state)
+    - [What the browser sees while it waits](#what-the-browser-sees-while-it-waits)
+  - [Run it](#run-it)
+    - [Deploy to AWS](#deploy-to-aws)
+  - [Three claims you can verify yourself](#three-claims-you-can-verify-yourself)
+    - [1. The arithmetic cannot be fudged](#1-the-arithmetic-cannot-be-fudged)
+    - [2. The waterfall order is data, not code](#2-the-waterfall-order-is-data-not-code)
+    - [3. The model cannot compute money, and cannot read your documents](#3-the-model-cannot-compute-money-and-cannot-read-your-documents)
+  - [Architecture on AWS](#architecture-on-aws)
+  - [Where to start reading](#where-to-start-reading)
+  - [The statutory basis](#the-statutory-basis)
+    - [What we are not claiming](#what-we-are-not-claiming)
+    - [Not legal advice](#not-legal-advice)
+  - [Status](#status)
+    - [What the detection numbers are, and are not](#what-the-detection-numbers-are-and-are-not)
+  - [Sources](#sources)
+
 
 ---
 
@@ -51,19 +84,19 @@ this page wrong.
 deductible ₹10,000 · co-pay 10% · consumables rider in force
 **Admission:** 7 days — 2 in ICU, 5 in a Deluxe room billed at ₹10,000/day
 
-| Bill line | Amount |
-|---|---|
-| Room rent — Deluxe, 5 days @ ₹10,000 | ₹50,000 |
-| ICU — 2 days @ ₹12,000 | ₹24,000 |
-| Surgeon's fee | ₹35,000 |
-| Anaesthetist's fee | ₹12,000 |
-| Operation theatre charges | ₹13,000 |
-| Pharmacy | ₹78,000 |
-| Surgical consumables | ₹20,000 |
-| Implants — drug-eluting stent | ₹1,20,000 |
-| Diagnostics — labs, imaging | ₹56,000 |
-| Medical records & administrative charges | ₹7,000 |
-| **Bill total** | **₹4,15,000** |
+| Bill line                                | Amount        |
+| ---------------------------------------- | ------------- |
+| Room rent — Deluxe, 5 days @ ₹10,000     | ₹50,000       |
+| ICU — 2 days @ ₹12,000                   | ₹24,000       |
+| Surgeon's fee                            | ₹35,000       |
+| Anaesthetist's fee                       | ₹12,000       |
+| Operation theatre charges                | ₹13,000       |
+| Pharmacy                                 | ₹78,000       |
+| Surgical consumables                     | ₹20,000       |
+| Implants — drug-eluting stent            | ₹1,20,000     |
+| Diagnostics — labs, imaging              | ₹56,000       |
+| Medical records & administrative charges | ₹7,000        |
+| **Bill total**                           | **₹4,15,000** |
 
 The patient took a room at ₹10,000 against a ₹6,000 eligibility, so the insurer applied a
 **40% proportionate deduction**. It applied it to the whole bill.
@@ -79,11 +112,11 @@ pie showData title The ₹2,06,680 deducted, reconciled
     "Unresolved (queried)" : 3000
 ```
 
-| Bucket | Amount | Why |
-|---|---|---|
-| ✅ **Correctly applied** | **₹84,480** | ₹7,000 administrative charges, non-payable under Annexure II with no rider covering them · ₹20,000 room rent above the per-day cap · ₹24,000 proportionate deduction on the surgeon, anaesthetist and OT fees, which genuinely *are* associated medical expenses · ₹10,000 deductible · ₹23,480 co-pay |
-| ❌ **Incorrectly applied** | **₹1,19,200** | The 40% was also applied to pharmacy and consumables (₹31,200 + ₹8,000 · `AME.EXCL.PHARMA`), implants (₹48,000 · `AME.EXCL.IMPLANT`), diagnostics (₹22,400 · `AME.EXCL.DIAG`) and ICU charges (₹9,600 · `PD.ICU`). The circular says it may not be. |
-| ⚠️ **Unresolved** | **₹3,000** | An "OTHER DEDUCTIONS" line on the sheet with no stated basis. We do not guess. The letter asks the insurer to explain it. |
+| Bucket                    | Amount        | Why                                                                                                                                                                                                                                                                                                    |
+| ------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ✅ **Correctly applied**   | **₹84,480**   | ₹7,000 administrative charges, non-payable under Annexure II with no rider covering them · ₹20,000 room rent above the per-day cap · ₹24,000 proportionate deduction on the surgeon, anaesthetist and OT fees, which genuinely *are* associated medical expenses · ₹10,000 deductible · ₹23,480 co-pay |
+| ❌ **Incorrectly applied** | **₹1,19,200** | The 40% was also applied to pharmacy and consumables (₹31,200 + ₹8,000 · `AME.EXCL.PHARMA`), implants (₹48,000 · `AME.EXCL.IMPLANT`), diagnostics (₹22,400 · `AME.EXCL.DIAG`) and ICU charges (₹9,600 · `PD.ICU`). The circular says it may not be.                                                    |
+| ⚠️ **Unresolved**          | **₹3,000**    | An "OTHER DEDUCTIONS" line on the sheet with no stated basis. We do not guess. The letter asks the insurer to explain it.                                                                                                                                                                              |
 
 `84,480 + 1,19,200 + 3,000 = 2,06,680.` It balances exactly, and it is not allowed not to —
 see [the invariant](#1-the-arithmetic-cannot-be-fudged) below.
@@ -132,18 +165,13 @@ flowchart LR
     GATE -. "no raw text past here" .-> PROSE
 ```
 
-The engine is compiled once and runs in **two** places: in Lambda as the authority, and in
-the browser, where the UI imports `reconstruct` and settles the reference claim on load with
-no network round-trip. Open the network tab and reload — you get the bundle and its fonts,
-and no request for a result.
+The engine is compiled once and runs in **two** places: in Lambda as the authority, and in the browser, where the UI imports `reconstruct` and settles the reference claim on load with no network round-trip. Open the network tab and reload — you get the bundle and its fonts, and no request for a result.
 
 ### The state machine, state for state
 
-`IMPLEMENTATION.md` §11, as deployed by `FcPipelineStack`. Two states park on a task token:
-Textract completion (there is no `.sync` integration for async Textract, so the SNS
-notification redeems the token) and human correction (the UI's correction grid resumes it —
-hours later, if need be). Every task catches into `FailWithReason`, which writes one of the
-taxonomy codes, never a stack trace.
+Two states park on a task token:
+- Textract completion (There is no `.sync` integration for async Textract, so the SNS notification redeems the token) 
+- Human correction (the UI's correction grid resumes it — hours later, if need be). Every task catches into `FailWithReason`, which writes one of the taxonomy codes, never a stack trace.
 
 ```mermaid
 stateDiagram-v2
@@ -181,9 +209,7 @@ stateDiagram-v2
 
 ### What the browser sees while it waits
 
-The event log is the contract. Locally the API streams it over SSE from its own store; on
-AWS the same route runs on a Lambda Function URL with response streaming, behind the same
-origin as the page, so the cookie travels and nothing buffers.
+The event log is the contract. Locally the API streams it over SSE from its own store; on AWS the same route runs on a Lambda Function URL with response streaming, behind the same origin as the page, so the cookie travels and nothing buffers.
 
 ```mermaid
 sequenceDiagram
@@ -226,13 +252,6 @@ pnpm verify          # typecheck · lint · dep:cruise · test
 pnpm dev             # API on http://localhost:3000 + UI on http://localhost:5173
 ```
 
-The UI proxies `/api` to the API process, so sign-in cookies stay first-party. Create an
-account, **New case → Load demo pack → Reconstruct settlement**, and watch the pipeline run:
-validate → classify → extract → redact → normalise → reconstruct → certificate. Four of the
-demo's lines come back *uncategorised* — the real tier-1 normaliser declines "Room Rent -
-Deluxe (5 days)" rather than guessing — and the correction grid re-runs the case to the
-worked example's figures. `#/demo` settles the same claim in the browser with no server.
-
 Or in containers (Docker Desktop running):
 
 ```bash
@@ -260,13 +279,10 @@ pnpm --filter @fc/rulepack lock    # regenerate the rulepack hash
 
 ### Deploy to AWS
 
-One command brings up all six stacks in order; the full runbook, the first-deploy caveats
-and the teardown are in [`docs/aws.md`](docs/aws.md).
-
 ```bash
-aws configure sso --profile fc && export AWS_PROFILE=fc      # once
-pnpm cdk -- bootstrap aws://<account>/ap-south-1              # once
-pnpm web:build && pnpm deploy                                 # every time; prints FcWebStack.Url
+aws configure sso --profile fc && export AWS_PROFILE=fc      # Once
+pnpm cdk -- bootstrap aws://<account>/ap-south-1              # Once
+pnpm cdk:deploy
 ```
 
 ```mermaid
@@ -284,10 +300,7 @@ flowchart LR
     Web -. "/fc/web/origin (SSM)" .-> Api
 ```
 
-Cross-stack references are explicit props, never `Fn::ImportValue` by name. The one thing
-that flows *backwards* — the public origin the API needs for cookies and the Cognito
-callback, which only exists once CloudFront has been created — goes through SSM and is read
-at cold start, which keeps the stacks a DAG.
+Cross-stack references are explicit props, never `Fn::ImportValue` by name. The one thing that flows *backwards*. The public origin the API needs for cookies and the Cognito callback, which only exists once CloudFront has been created. Then goes through SSM and is read at cold start, which keeps the stacks a DAG.
 
 ---
 
@@ -318,15 +331,15 @@ Order matters more than any individual rule, because each step consumes the outp
 last. [`steps.json`](packages/rulepack/data/v1/steps.json) is an ordered list of step IDs,
 each resolving to a registered pure reducer:
 
-| # | Step | What it does |
-|---|---|---|
-| 1 | `ADMISSIBILITY` | Policy in force, waiting periods. Halts the waterfall on failure. |
-| 2 | `NORMALISATION_GATE` | Free-text bill lines → canonical categories, or `UNRESOLVED`. |
-| 3 | `NON_PAYABLE` | Annexure II list, checking riders and endorsements first. |
-| 4 | `CAPS_SUBLIMITS` | Room rent and ICU per-day limits. |
-| 5 | `PROPORTIONATE` | The circular's bright lines. **Step five of seven, not the thesis.** |
-| 6 | `COPAY_DEDUCTIBLE` | Deductible then co-pay — the order is a parameter. |
-| 7 | `SUM_INSURED` | Aggregate liability ceiling. |
+| #   | Step                 | What it does                                                         |
+| --- | -------------------- | -------------------------------------------------------------------- |
+| 1   | `ADMISSIBILITY`      | Policy in force, waiting periods. Halts the waterfall on failure.    |
+| 2   | `NORMALISATION_GATE` | Free-text bill lines → canonical categories, or `UNRESOLVED`.        |
+| 3   | `NON_PAYABLE`        | Annexure II list, checking riders and endorsements first.            |
+| 4   | `CAPS_SUBLIMITS`     | Room rent and ICU per-day limits.                                    |
+| 5   | `PROPORTIONATE`      | The circular's bright lines. **Step five of seven, not the thesis.** |
+| 6   | `COPAY_DEDUCTIBLE`   | Deductible then co-pay — the order is a parameter.                   |
+| 7   | `SUM_INSURED`        | Aggregate liability ceiling.                                         |
 
 Whether co-pay applies before or after the deductible is a **rulepack version, not a
 branch**. Modelling a second insurer's wording is a config change, and an older certificate
@@ -364,11 +377,11 @@ flowchart LR
     style raw fill:#fbeeee,stroke:#a94442
 ```
 
-| Layer | Mechanism | Where |
-|---|---|---|
-| Compile time | `converseText()` accepts only the branded `RedactedText`; raw text is a type error | [`functions/src/shared/redacted.ts`](packages/functions/src/shared/redacted.ts) |
-| Runtime | The four post-gate Lambdas have no `s3:GetObject` on the raw bucket and no `kms:Decrypt` on the document key | [`infra/lib/pipeline-stack.ts`](packages/infra/lib/pipeline-stack.ts) "the far side" |
-| Lifecycle | `raw/` expires after 1 day; case items carry a 24 h TTL | `core-stack.ts` · `dynamo-store.ts` |
+| Layer        | Mechanism                                                                                                    | Where                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Compile time | `converseText()` accepts only the branded `RedactedText`; raw text is a type error                           | [`functions/src/shared/redacted.ts`](packages/functions/src/shared/redacted.ts)      |
+| Runtime      | The four post-gate Lambdas have no `s3:GetObject` on the raw bucket and no `kms:Decrypt` on the document key | [`infra/lib/pipeline-stack.ts`](packages/infra/lib/pipeline-stack.ts) "the far side" |
+| Lifecycle    | `raw/` expires after 1 day; case items carry a 24 h TTL                                                      | `core-stack.ts` · `dynamo-store.ts`                                                  |
 
 The gate itself runs Comprehend `DetectPiiEntities` **and** deterministic regexes for
 Aadhaar, PAN, GSTIN, phone and email. A Comprehend error is `REDACTION_FAILED_OPEN` and the
@@ -393,20 +406,20 @@ Why each service is there, one line each. The operator's view — what each stac
 every IAM grant, every `cdk-nag` suppression with its reason — is
 [`docs/aws.md`](docs/aws.md).
 
-| Service | Job |
-|---|---|
-| **S3** | Claim pack storage. Presigned POSTs (5 min, 25 MB, content-type pinned) keep documents off our compute. Raw and redacted are separate buckets so the split is a grant, not a prefix condition. |
-| **Step Functions** | Standard workflow, one Lambda per state, two task-token pauses. Standard because a human correction can take hours. |
-| **Lambda** | Thin handlers over the engine, `arm64`, Node 24, bundled from workspace source at synth. Scales to zero between demos. |
-| **Textract** | `TABLES` + `QUERIES` + `LAYOUT` on the bill and sheet, `QUERIES` on the schedule. Column structure is the only thing that matters, and generic OCR loses it. Bounding boxes are kept per row for the provenance crop. |
-| **Comprehend** | The model half of the redaction gate. |
-| **Bedrock** | Prose only, opt-in (`-c fc:proseModelId=…`), and only then does the one calling function get `bedrock:InvokeModel` on that model ARN. |
-| **DynamoDB** | Single table: case records (24 h TTL), better-auth users and sessions, the lexicon, parked Textract tokens (6 h TTL). |
-| **KMS** | A symmetric key for documents; an asymmetric `ECC_NIST_P256` key that signs every certificate. `verify` returns KMS's own verdict on the signature. |
-| **API Gateway + Function URL** | HTTP API for every route; a streaming Function URL for the one route that must stay open (SSE). |
-| **CloudFront** | The public URL: the bundle from a private bucket, and `/api/*` proxied to both origins so the session cookie is first-party. |
-| **Cognito** | Optional second sign-in, through better-auth's Cognito social provider — Hosted UI authenticates, better-auth still owns the session. Email/password stays on. |
-| **CloudWatch** | A dashboard of domain metrics — unresolved %, residual paise, engine ms, tier distribution — emitted as EMF by the handlers, and four alarms. |
+| Service                        | Job                                                                                                                                                                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S3**                         | Claim pack storage. Presigned POSTs (5 min, 25 MB, content-type pinned) keep documents off our compute. Raw and redacted are separate buckets so the split is a grant, not a prefix condition.                        |
+| **Step Functions**             | Standard workflow, one Lambda per state, two task-token pauses. Standard because a human correction can take hours.                                                                                                   |
+| **Lambda**                     | Thin handlers over the engine, `arm64`, Node 24, bundled from workspace source at synth. Scales to zero between demos.                                                                                                |
+| **Textract**                   | `TABLES` + `QUERIES` + `LAYOUT` on the bill and sheet, `QUERIES` on the schedule. Column structure is the only thing that matters, and generic OCR loses it. Bounding boxes are kept per row for the provenance crop. |
+| **Comprehend**                 | The model half of the redaction gate.                                                                                                                                                                                 |
+| **Bedrock**                    | Prose only, opt-in (`-c fc:proseModelId=…`), and only then does the one calling function get `bedrock:InvokeModel` on that model ARN.                                                                                 |
+| **DynamoDB**                   | Single table: case records (24 h TTL), better-auth users and sessions, the lexicon, parked Textract tokens (6 h TTL).                                                                                                 |
+| **KMS**                        | A symmetric key for documents; an asymmetric `ECC_NIST_P256` key that signs every certificate. `verify` returns KMS's own verdict on the signature.                                                                   |
+| **API Gateway + Function URL** | HTTP API for every route; a streaming Function URL for the one route that must stay open (SSE).                                                                                                                       |
+| **CloudFront**                 | The public URL: the bundle from a private bucket, and `/api/*` proxied to both origins so the session cookie is first-party.                                                                                          |
+| **Cognito**                    | Optional second sign-in, through better-auth's Cognito social provider — Hosted UI authenticates, better-auth still owns the session. Email/password stays on.                                                        |
+| **CloudWatch**                 | A dashboard of domain metrics — unresolved %, residual paise, engine ms, tier distribution — emitted as EMF by the handlers, and four alarms.                                                                         |
 
 ---
 
@@ -491,17 +504,17 @@ a clause against a line; it does not advise you on your rights.
 
 ## Status
 
-| Package | State |
-|---|---|
-| `@fc/contracts` | **Complete.** The frozen seam. Changes need a version bump. |
-| `@fc/engine` | **All seven step reducers implemented**, plus the interpreter, `Paise` arithmetic and the reconciliation invariant. |
-| `@fc/rulepack` | All six IRDAI bright-line clauses encoded as data, validated, hashed. 73 line categories with the category ↔ clause contract asserted at load time. |
-| `@fc/normalise` | Tier 1 of the cascade: the lexicon built from the rulepack's aliases, exact and trigram-fuzzy, one calibrated threshold. Pure; tiers 2–3 plug in through an `Escalation` hook — **not yet wired**. |
-| `@fc/api` | The product slice: better-auth sign-in (email/password, Cognito optional), typed uploads, the §11 pipeline as in-process stages, SSE events, checksum pause and correction resume, certificates and replay verification. Behind `CaseStore` / `DocumentStorage` / `PipelineRunner` interfaces. |
-| `@fc/functions` | **All handlers.** One per state of the state machine, the Hono app on Lambda (HTTP API + streaming URL), the DynamoDB `CaseStore` and better-auth adapter, the Textract parser with bbox provenance, the eval sweep. |
-| `@fc/infra` | **All six stacks**, synthesising clean under `cdk-nag`. Bedrock prose opt-in; tiers 2–3, Bedrock document classification and Guardrails not yet wired — the gaps are listed in [`docs/aws.md` §2](docs/aws.md). |
-| `@fc/eval` | Seeded corpus over four admission archetypes, six fault operators, lawful controls, a degradation profile, the threshold sweep, the two-profile `eval:assert` gate. PDF rendering (and so a real Textract measurement) still to come. |
-| `@fc/web` | Sign-in → cases → six typed dropzones → live pipeline → review with correction grid → certificate verify. The demo case settles in-browser. What-if panel and provenance crop not yet built. |
+| Package         | State                                                                                                                                                                                                                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@fc/contracts` | **Complete.** The frozen seam. Changes need a version bump.                                                                                                                                                                                                                                    |
+| `@fc/engine`    | **All seven step reducers implemented**, plus the interpreter, `Paise` arithmetic and the reconciliation invariant.                                                                                                                                                                            |
+| `@fc/rulepack`  | All six IRDAI bright-line clauses encoded as data, validated, hashed. 73 line categories with the category ↔ clause contract asserted at load time.                                                                                                                                            |
+| `@fc/normalise` | Tier 1 of the cascade: the lexicon built from the rulepack's aliases, exact and trigram-fuzzy, one calibrated threshold. Pure; tiers 2–3 plug in through an `Escalation` hook — **not yet wired**.                                                                                             |
+| `@fc/api`       | The product slice: better-auth sign-in (email/password, Cognito optional), typed uploads, the §11 pipeline as in-process stages, SSE events, checksum pause and correction resume, certificates and replay verification. Behind `CaseStore` / `DocumentStorage` / `PipelineRunner` interfaces. |
+| `@fc/functions` | **All handlers.** One per state of the state machine, the Hono app on Lambda (HTTP API + streaming URL), the DynamoDB `CaseStore` and better-auth adapter, the Textract parser with bbox provenance, the eval sweep.                                                                           |
+| `@fc/infra`     | **All six stacks**, synthesising clean under `cdk-nag`. Bedrock prose opt-in; tiers 2–3, Bedrock document classification and Guardrails not yet wired — the gaps are listed in [`docs/aws.md` §2](docs/aws.md).                                                                                |
+| `@fc/eval`      | Seeded corpus over four admission archetypes, six fault operators, lawful controls, a degradation profile, the threshold sweep, the two-profile `eval:assert` gate. PDF rendering (and so a real Textract measurement) still to come.                                                          |
+| `@fc/web`       | Sign-in → cases → six typed dropzones → live pipeline → review with correction grid → certificate verify. The demo case settles in-browser. What-if panel and provenance crop not yet built.                                                                                                   |
 
 `pnpm verify` is green: 10 packages typecheck, lint clean, 0 dependency violations, 140 tests
 passing. `pnpm cdk:synth` is green across six stacks with no unreviewed `cdk-nag` findings.
@@ -527,12 +540,12 @@ Bars, left to right per clause: **clean** · **degraded @ 0.52** · **degraded @
 (default)**. Precision is 1.00 in every cell of every profile — no lawful deduction in the
 control set is ever disputed, and no miss is attributable to the engine.
 
-| | clean | degraded @ 0.92 | degraded @ 0.52 |
-|---|---:|---:|---:|
-| injected faults detected | 178 / 178 | 63 / 178 | 114 / 178 |
-| lawful control packs disputed | 0 | 0 | 0 |
-| bill lines gated by the normaliser | 0% | 52.6% | 13.2% |
-| misses attributable to the engine | 0 | 0 | 0 |
+|                                    |     clean | degraded @ 0.92 | degraded @ 0.52 |
+| ---------------------------------- | --------: | --------------: | --------------: |
+| injected faults detected           | 178 / 178 |        63 / 178 |       114 / 178 |
+| lawful control packs disputed      |         0 |               0 |               0 |
+| bill lines gated by the normaliser |        0% |           52.6% |           13.2% |
+| misses attributable to the engine  |         0 |               0 |               0 |
 
 **Clean** is rows exactly as generated, categories by construction. It measures the
 waterfall alone. **Degraded** is the same packs with descriptions and digits perturbed the
@@ -574,7 +587,6 @@ Regulatory:
 
 - IRDAI circular `IRDAI/HLT/REG/CIR/151/06/2020`, *Guidelines on Standardisation in Health Insurance* (11 June 2020) — [irdai.gov.in][irdai-151]
 - IRDAI *Master Circular on Health Insurance Business* (29 May 2024), including the non-payable items list — [PDF][irdai-master]
-- IRDAI Annual Report 2024-25, Table I.29 (claims disallowed under policy terms) — [irdai.gov.in][irdai-ar]
 
 Platform — the patterns the AWS build follows:
 
