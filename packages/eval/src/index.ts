@@ -10,6 +10,8 @@
  */
 export * from './types';
 export { generatePack } from './generate/generator';
+export { rngFromSeed } from './generate/rng';
+export type { Rng } from './generate/rng';
 export { degradeInput, DEFAULT_DEGRADE, ocrNoise, digitNoise } from './generate/degrade';
 export type { DegradeKnobs, DegradeReport, DegradedInput } from './generate/degrade';
 export { injectFaults, controlsFor, ALL_FAULT_KINDS } from './faults/inject';

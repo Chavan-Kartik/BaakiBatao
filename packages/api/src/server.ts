@@ -3,11 +3,12 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { buildLexicon, createNormaliser } from '@fc/normalise';
 import { loadRulepackV1 } from '@fc/rulepack';
-import { createAuth, migrateAuth } from './auth';
-import { loadEnv } from './env';
+import { createAuth, migrateAuth, type Auth } from './auth';
+import { loadEnv, type Env } from './env';
 import { structuredExtractor, textractExtractor } from './pipeline/extract';
 import type { PipelineDeps } from './pipeline/run';
-import { caseRoutes } from './routes/cases';
+import { localRunner, type PipelineRunner } from './pipeline/runner';
+import { caseRoutes, type CaseRouteOptions } from './routes/cases';
 import { FsCaseStore, FsDocumentStorage } from './store/case-store';
 
 /**
@@ -17,7 +18,42 @@ import { FsCaseStore, FsDocumentStorage } from './store/case-store';
  * routes become API Gateway + Lambda, the store becomes DynamoDB, uploads
  * become presigned S3 POSTs and the pipeline becomes Step Functions — behind
  * the interfaces in `store/` and `pipeline/`, not by rewriting the routes.
+ * `createApp` is the part both share; `createServer` is the local wiring.
  */
+export interface AppParts {
+  readonly env: Env;
+  readonly auth: Auth;
+  readonly deps: PipelineDeps;
+  readonly runner: PipelineRunner;
+  /** Whatever the deployment wants `/api/health` to say about itself. */
+  readonly health?: Record<string, unknown>;
+  readonly routes?: CaseRouteOptions;
+}
+
+export function createApp(parts: AppParts): Hono {
+  const { env, auth, deps, runner } = parts;
+  const app = new Hono();
+  app.use('*', logger());
+  app.use('/api/*', cors({ origin: [...env.trustedOrigins], credentials: true }));
+
+  app.get('/api/health', (c) =>
+    c.json({
+      ok: true,
+      rulepack: { version: deps.rulepack.version, hash: deps.rulepack.hash },
+      extractor: deps.extractor.name,
+      runner: runner.name,
+      // The UI shows a Cognito button only when the server can honour it.
+      signIn: { emailAndPassword: true, cognito: env.cognito !== null },
+      ...parts.health,
+    }),
+  );
+
+  app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
+  app.route('/api/cases', caseRoutes(auth, deps, runner, parts.routes));
+
+  return app;
+}
+
 export async function createServer() {
   const env = loadEnv();
   const auth = createAuth(env);
@@ -32,22 +68,8 @@ export async function createServer() {
     normaliser: createNormaliser(buildLexicon(rulepack)),
     now: () => new Date().toISOString(),
   };
+  const runner = localRunner(deps, env.baseUrl);
 
-  const app = new Hono();
-  app.use('*', logger());
-  app.use('/api/*', cors({ origin: [...env.trustedOrigins], credentials: true }));
-
-  app.get('/api/health', (c) =>
-    c.json({
-      ok: true,
-      rulepack: { version: rulepack.version, hash: rulepack.hash },
-      extractor: deps.extractor.name,
-      auth: migrated,
-    }),
-  );
-
-  app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw));
-  app.route('/api/cases', caseRoutes(auth, deps, env.baseUrl));
-
+  const app = createApp({ env, auth, deps, runner, health: { auth: migrated } });
   return { app, env, deps };
 }

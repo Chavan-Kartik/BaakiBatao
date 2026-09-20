@@ -66,7 +66,10 @@ export class CoreStack extends Stack {
       cors: [
         {
           allowedMethods: [HttpMethods.POST, HttpMethods.PUT],
-          allowedOrigins: ['*'], // TODO(W1): narrow to the CloudFront domain
+          // The distribution's domain is minted two stacks later, and an S3
+          // CORS origin allows exactly one wildcard — so this is the tightest
+          // rule that can be written before the public URL exists.
+          allowedOrigins: ['https://*.cloudfront.net', 'http://localhost:5173'],
           allowedHeaders: ['*'],
           maxAge: 300,
         },

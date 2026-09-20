@@ -1,5 +1,5 @@
 import { Eye, EyeOff, FileText } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { LoadingButton } from '../components/extras/loading-button';
 import { RegulatoryMarquee } from '../components/extras/marquee';
 import { authClient } from '../lib/auth-client';
@@ -19,6 +19,34 @@ export function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Amazon Cognito is a second way in when the deployment has a user pool;
+  // the server says so on /api/health, and the button only exists then.
+  const [cognito, setCognito] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/health', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h: { signIn?: { cognito?: boolean } } | null) => {
+        if (!cancelled) setCognito(Boolean(h?.signIn?.cognito));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function continueWithCognito() {
+    setBusy(true);
+    setError(null);
+    // better-auth redirects to the Hosted UI and back to its own callback,
+    // which sets the session cookie and sends the browser on to the cases list.
+    const result = await authClient.signIn.social({ provider: 'cognito', callbackURL: '/#/cases' });
+    if (result.error) {
+      setBusy(false);
+      setError(result.error.message ?? 'That did not work.');
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -89,6 +117,24 @@ export function SignIn() {
             >
               {mode === 'in' ? 'Sign in' : 'Create account'}
             </LoadingButton>
+
+            {cognito && (
+              <>
+                <div className="my-3 flex items-center gap-2 text-[11px] text-text-3">
+                  <span className="h-px flex-1 bg-border" />
+                  or
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={continueWithCognito}
+                  className="h-8 w-full rounded-sm border border-border text-[12px] font-medium text-text-2 hover:bg-selected disabled:opacity-60"
+                >
+                  Continue with Amazon Cognito
+                </button>
+              </>
+            )}
 
             <p className="mt-4 text-[11px] leading-relaxed text-text-3">
               Your documents are tied to your account and nobody else's. Raw uploads are kept for the

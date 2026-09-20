@@ -1,8 +1,15 @@
 {
   "app": "tsx bin/app.ts",
   "watch": {
-    "include": ["**"],
-    "exclude": ["README.md", "cdk*.json", "node_modules", "cdk.out"]
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "node_modules",
+      "cdk.out"
+    ]
   },
   "context": {
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
@@ -13,6 +20,7 @@
     "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
     "@aws-cdk/aws-lambda:useCdkManagedLogGroup": true,
     "fc:primaryRegion": "ap-south-1",
-    "fc:bedrockRegion": "ap-south-1"
+    "fc:bedrockRegion": "ap-south-1",
+    "@aws-cdk/core:defaultCrossStackReferences": "strong"
   }
 }

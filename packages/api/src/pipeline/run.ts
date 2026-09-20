@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type {
   CaseEvent,
   CaseStatus,
+  Certificate,
   FailureCode,
   NormalisedLine,
   ReconstructInput,
@@ -37,6 +38,12 @@ export interface PipelineDeps {
   readonly rulepack: Rulepack;
   readonly normaliser: Normaliser;
   readonly now: () => string;
+  /**
+   * Checks a certificate's signature, where the deployment can. Locally there
+   * is no signing key, so certificates carry `signature: null` and `verify`
+   * reports `signatureValid: null`; on AWS this is a KMS `Verify` call.
+   */
+  readonly verifySignature?: (certificate: Certificate) => Promise<boolean | null>;
 }
 
 export class PipelineFailure extends Error {
@@ -245,7 +252,7 @@ async function fail(deps: PipelineDeps, caseId: string, e: unknown): Promise<voi
 }
 
 /** Content-addresses what the engine was given, so the certificate pins it. */
-function extractionHash(e: ExtractedState): ReconstructInput['pins']['extractionHash'] {
+export function extractionHash(e: ExtractedState): ReconstructInput['pins']['extractionHash'] {
   const canonical = canonicalise([e.billTable, e.deductionTable, e.policy, e.admission, e.actualPaid]);
   return `sha256:${createHash('sha256').update(canonical, 'utf8').digest('hex')}`;
 }

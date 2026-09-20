@@ -12,10 +12,20 @@ import { CreateCaseRequest, DocumentKind as DocumentKindSchema, SubmitCorrection
 import { matchDeductionSheet, normaliseDescription, reconstruct } from '@fc/engine';
 import type { Auth, Session } from '../auth';
 import { resultHash } from '../pipeline/certificate';
-import { resumeAfterCorrection, runPipeline, type PipelineDeps } from '../pipeline/run';
+import type { PipelineDeps } from '../pipeline/run';
+import type { PipelineRunner } from '../pipeline/runner';
 import type { CaseRecord } from '../store/case-store';
 
 type Vars = { Variables: { session: Session } };
+
+export interface CaseRouteOptions {
+  /**
+   * How long one events stream may stay open before it ends and the browser's
+   * EventSource reconnects with `Last-Event-ID`. Unbounded locally; on Lambda
+   * it sits under the function timeout.
+   */
+  readonly eventStreamMaxMs?: number;
+}
 
 /**
  * The case API (IMPLEMENTATION.md §18). Every route is behind a session, and
@@ -26,7 +36,12 @@ type Vars = { Variables: { session: Session } };
  * those are presigned S3 POSTs so the bytes never touch our compute; locally
  * they are `PUT` routes on this server. The client does not know which.
  */
-export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hono<Vars> {
+export function caseRoutes(
+  auth: Auth,
+  deps: PipelineDeps,
+  runner: PipelineRunner,
+  options: CaseRouteOptions = {},
+): Hono<Vars> {
   const app = new Hono<Vars>();
 
   app.use('*', async (c, next) => {
@@ -85,11 +100,7 @@ export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hon
 
     const response: CreateCaseResponse = {
       caseId: caseId as CreateCaseResponse['caseId'],
-      uploads: parsed.data.docs.map((d) => ({
-        kind: d.kind,
-        url: `${baseUrl}/api/cases/${caseId}/documents/${d.kind}`,
-        fields: {},
-      })),
+      uploads: await runner.uploadTargets(caseId, parsed.data.docs),
     };
     return c.json(response, 201);
   });
@@ -130,9 +141,12 @@ export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hon
 
   /** All declared documents are in; run the pipeline. */
   app.post('/:id/submit', async (c) => {
-    const record = await owned(c, c.req.param('id'));
-    if (!record) return c.json({ error: 'no such case' }, 404);
-    if (record.status !== 'AWAITING_UPLOAD') return c.json({ error: 'already submitted' }, 409);
+    const declared = await owned(c, c.req.param('id'));
+    if (!declared) return c.json({ error: 'no such case' }, 404);
+    if (declared.status !== 'AWAITING_UPLOAD') return c.json({ error: 'already submitted' }, 409);
+    // Presigned uploads land in storage without passing through here; the
+    // runner records them on the case before the check below.
+    const record = await runner.collect(declared);
     const missing = record.expected.filter((e) => !record.documents.some((d) => d.kind === e.kind));
     if (missing.length > 0) {
       return c.json({ error: `still waiting for ${missing.map((m) => m.kind).join(', ')}` }, 409);
@@ -150,7 +164,7 @@ export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hon
         },
       ],
     }));
-    void runPipeline(deps, record.caseId);
+    await runner.start(record.caseId);
     return c.json({ caseId: record.caseId, status: 'VALIDATING' }, 202);
   });
 
@@ -177,19 +191,32 @@ export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hon
 
     return streamSSE(c, async (stream) => {
       let sent = Number.isFinite(after) ? after : -1;
+      const deadline = options.eventStreamMaxMs ? Date.now() + options.eventStreamMaxMs : Infinity;
+      let lastWrite = Date.now();
       for (;;) {
+        // A quiet stretch (Textract on a long document) must not look like a
+        // dead connection to whatever proxy sits in front: a comment line
+        // every 15 s keeps it open and is invisible to EventSource.
+        if (Date.now() - lastWrite > 15_000) {
+          await stream.write(': keep-alive\n\n');
+          lastWrite = Date.now();
+        }
         const current = await deps.store.get(caseId);
         if (!current) break;
         for (const ev of current.events) {
           if (ev.seq <= sent) continue;
           await stream.writeSSE({ id: String(ev.seq), event: ev.kind, data: JSON.stringify(ev) });
           sent = ev.seq;
+          lastWrite = Date.now();
         }
         const terminal = current.status === 'COMPLETE' || current.status === 'FAILED' || current.status === 'AWAITING_CORRECTION';
         if (terminal) {
           await stream.writeSSE({ event: 'status', data: JSON.stringify({ status: current.status }) });
           break;
         }
+        // Not terminal but out of time: end quietly. The browser reconnects
+        // with the last seq it saw, and nothing is repeated or lost.
+        if (Date.now() >= deadline) break;
         await stream.sleep(300);
       }
     });
@@ -263,7 +290,7 @@ export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hon
         { seq: r.events.length, at: deps.now(), kind: 'RowsCorrected', detail: { edits: parsed.data.rows.length } },
       ],
     }));
-    void resumeAfterCorrection(deps, record.caseId);
+    await runner.resume(record);
     return c.json({ caseId: record.caseId, status: 'NORMALISING' }, 202);
   });
 
@@ -292,7 +319,7 @@ export function caseRoutes(auth: Auth, deps: PipelineDeps, baseUrl: string): Hon
       storedHash: record.certificate.resultHash,
       recomputedHash,
       recomputedInMs: Math.round((performance.now() - started) * 100) / 100,
-      signatureValid: null,
+      signatureValid: deps.verifySignature ? await deps.verifySignature(record.certificate) : null,
     };
     return c.json(result);
   });

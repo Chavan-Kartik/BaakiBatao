@@ -3,11 +3,18 @@ import {
   AllowedMethods,
   CachePolicy,
   Distribution,
+  Function as CloudFrontFunction,
+  FunctionCode,
+  FunctionEventType,
   HttpVersion,
+  OriginProtocolPolicy,
+  OriginRequestPolicy,
   PriceClass,
   ViewerProtocolPolicy,
+  type BehaviorOptions,
 } from 'aws-cdk-lib/aws-cloudfront';
-import { S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { HttpOrigin, S3BucketOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { OAuthScope, UserPool, UserPoolClient, UserPoolClientIdentityProvider } from 'aws-cdk-lib/aws-cognito';
 import {
   BlockPublicAccess,
   Bucket,
@@ -15,24 +22,37 @@ import {
   ObjectOwnership,
 } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, CacheControl, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { NagSuppressions } from 'cdk-nag';
 import { join } from 'node:path';
 import type { Construct } from 'constructs';
+import type { ApiRefs } from './shared';
 
 /**
  * The public URL.
  *
- * This stack is the whole demo, and it has no backend. `packages/engine` is
- * pure, so the same waterfall that runs in Lambda as the authority is compiled
- * into the browser bundle — which means a static distribution is a working
- * product, not a placeholder. It is also the cheapest thing in the account:
- * there is nothing here that costs money while nobody is looking at it.
+ * One distribution serves the web bundle from a private bucket and proxies
+ * `/api/*` to the hosted API — the HTTP API for every route, the streaming
+ * Function URL for the events route — so the browser sees one origin, the
+ * session cookie is first-party, and nothing here needs CORS. That is the
+ * same shape `docker/nginx.conf` gives the container deployment.
  *
- * Spec: build spec §10.4, §22
+ * Without `api`, the stack is the standalone demo it always was: the engine
+ * is pure and the bundle settles the reference claim in the browser, so a
+ * static distribution is a working product, not a placeholder.
+ *
+ * This stack deploys last and mints the origin the API needs for cookies and
+ * the Cognito callback, so it writes that origin — and the Cognito app
+ * client it registers against it — to SSM under `/fc/web`, where the API
+ * Lambda reads them at cold start.
+ *
+ * Spec: build spec §10.2, §10.4, §22
  */
 export interface WebStackProps extends StackProps {
   /** Built by `pnpm web:build` before synth. */
   readonly bundlePath?: string;
+  /** The hosted API to front. Omit for the static demo alone. */
+  readonly api?: ApiRefs;
 }
 
 export class WebStack extends Stack {
@@ -69,6 +89,24 @@ export class WebStack extends Stack {
       autoDeleteObjects: true,
     });
 
+    // The app routes client-side, so a deep link has no object behind it.
+    // Paths without a file extension are rewritten to index.html at the
+    // edge, before the origin is asked. This is done as a viewer-request
+    // function rather than with custom error responses on purpose: error
+    // responses apply to every behaviour on the distribution, and would
+    // turn the API's own 404 ("no such case") into a 200 with a web page.
+    const spaRewrite = new CloudFrontFunction(this, 'SpaRewrite', {
+      code: FunctionCode.fromInline(
+        `function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+  if (uri.indexOf('/api/') !== 0 && uri.indexOf('.') === -1) request.uri = '/index.html';
+  return request;
+}`,
+      ),
+      comment: 'Rewrites extension-less paths to /index.html for client-side routing',
+    });
+
     this.distribution = new Distribution(this, 'Distribution', {
       defaultBehavior: {
         origin: S3BucketOrigin.withOriginAccessControl(originBucket),
@@ -76,7 +114,9 @@ export class WebStack extends Stack {
         allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
         cachePolicy: CachePolicy.CACHING_OPTIMIZED,
         compress: true,
+        functionAssociations: [{ function: spaRewrite, eventType: FunctionEventType.VIEWER_REQUEST }],
       },
+      additionalBehaviors: props?.api ? apiBehaviors(props.api) : undefined,
       defaultRootObject: 'index.html',
       httpVersion: HttpVersion.HTTP2_AND_3,
       // No `minimumProtocolVersion` here on purpose: it has no effect without a
@@ -87,13 +127,6 @@ export class WebStack extends Stack {
       enableLogging: true,
       logBucket: logsBucket,
       logFilePrefix: 'cdn/',
-      // The app routes client-side, so a deep link has no object behind it.
-      // Both codes are rewritten rather than 404ing, and the 200 matters:
-      // returning index.html under a 404 would break the browser history API.
-      errorResponses: [
-        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index.html' },
-        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html' },
-      ],
     });
 
     new BucketDeployment(this, 'DeployBundle', {
@@ -117,12 +150,47 @@ export class WebStack extends Stack {
       cacheControl: [CacheControl.fromString('no-cache, must-revalidate')],
     });
 
-    new CfnOutput(this, 'Url', {
-      value: `https://${this.distribution.distributionDomainName}`,
-      description: 'The public URL',
-    });
+    const origin = `https://${this.distribution.distributionDomainName}`;
+    new CfnOutput(this, 'Url', { value: origin, description: 'The public URL' });
+
+    if (props?.api) this.registerWithApi(props.api, origin);
 
     this.suppressReviewedNagFindings();
+  }
+
+  /**
+   * What the API needs from this stack, written where its Lambda reads it:
+   * the public origin, and the Cognito app client whose callback URL is on
+   * that origin. Explicit values, not exports — see `shared.ts`.
+   */
+  private registerWithApi(api: ApiRefs, origin: string): void {
+    const userPool = UserPool.fromUserPoolId(this, 'UserPool', api.userPoolId);
+    const client = new UserPoolClient(this, 'WebClient', {
+      userPool,
+      userPoolClientName: 'fc-web',
+      // Public client with PKCE: better-auth runs the code exchange in the
+      // Lambda with no secret, which is the right shape for a browser flow.
+      generateSecret: false,
+      supportedIdentityProviders: [UserPoolClientIdentityProvider.COGNITO],
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [OAuthScope.OPENID, OAuthScope.EMAIL, OAuthScope.PROFILE],
+        callbackUrls: [`${origin}/api/auth/callback/cognito`],
+        logoutUrls: [`${origin}/`],
+      },
+      preventUserExistenceErrors: true,
+    });
+
+    new StringParameter(this, 'OriginParam', {
+      parameterName: '/fc/web/origin',
+      stringValue: origin,
+      description: 'The public origin; the API uses it for cookies, CORS and the Cognito callback',
+    });
+    new StringParameter(this, 'CognitoClientParam', {
+      parameterName: '/fc/web/cognito-client-id',
+      stringValue: client.userPoolClientId,
+      description: 'Cognito app client registered against the public origin',
+    });
   }
 
   private suppressReviewedNagFindings(): void {
@@ -145,12 +213,12 @@ export class WebStack extends Stack {
         {
           id: 'AwsSolutions-CFR4',
           reason:
-            "Unfixable while the distribution uses the default *.cloudfront.net certificate, whose security policy AWS fixes at TLSv1 regardless of what the template asks for. Raising it requires a custom domain and an ACM certificate, which this submission does not have. The site serves only public static assets and sets no cookies, so a downgrade reveals nothing that is not already public. Attaching a domain is the fix, and it changes this stack by two properties.",
+            "Unfixable while the distribution uses the default *.cloudfront.net certificate, whose security policy AWS fixes at TLSv1 regardless of what the template asks for. Raising it requires a custom domain and an ACM certificate, which this submission does not have. Attaching a domain is the fix, and it changes this stack by two properties.",
         },
         {
           id: 'AwsSolutions-CFR2',
           reason:
-            'No WAF. The distribution serves immutable static assets from a private bucket with no origin request forwarding, no cookies and no query strings in the cache key, so there is no request-borne attack surface for a WAF to inspect. A WAF web ACL also costs more per month than the rest of this stack combined.',
+            'No WAF. The static behaviour serves immutable assets from a private bucket; the API behaviours forward to an application that authenticates every request itself and holds nothing beyond a 24-hour demo case. A WAF web ACL costs more per month than the rest of this stack combined.',
         },
       ],
       true,
@@ -189,6 +257,36 @@ export class WebStack extends Stack {
       );
     }
   }
+}
+
+/**
+ * `/api/*` to the HTTP API, and the events route to the streaming Function
+ * URL. Nothing is cached; every viewer header, cookie and query string is
+ * forwarded except `Host`, which each origin needs to be its own.
+ */
+function apiBehaviors(api: ApiRefs): Record<string, BehaviorOptions> {
+  const common: Omit<BehaviorOptions, 'origin'> = {
+    viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    allowedMethods: AllowedMethods.ALLOW_ALL,
+    cachePolicy: CachePolicy.CACHING_DISABLED,
+    originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+    compress: false,
+  };
+  return {
+    // Server-sent events stay open; the origin read timeout is the ceiling
+    // on a quiet stretch (the route sends a keep-alive well inside it).
+    'api/cases/*/events': {
+      ...common,
+      origin: new HttpOrigin(api.eventsUrlDomain, {
+        protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY,
+        readTimeout: Duration.seconds(60),
+      }),
+    },
+    'api/*': {
+      ...common,
+      origin: new HttpOrigin(api.httpApiDomain, { protocolPolicy: OriginProtocolPolicy.HTTPS_ONLY }),
+    },
+  };
 }
 
 /** `packages/web/dist`, resolved from this file rather than from the cwd. */
