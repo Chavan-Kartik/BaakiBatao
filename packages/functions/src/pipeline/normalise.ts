@@ -4,7 +4,7 @@ import { buildLexicon, createNormaliser, DEFAULT_TIER1, type Lexicon } from '@fc
 import { required } from '../shared/config';
 import { recordNormalisation } from '../shared/metrics';
 import { emit, rethrowCoded, stageDeps, transition } from '../store/io';
-import { readLexicon, writeLexicon } from '../store/lexicon';
+import { readLearnedAliases } from '../store/lexicon';
 
 /**
  * `Normalise` (state 8): the tier-1 cascade over the redacted bill rows —
@@ -28,10 +28,14 @@ export const handler = async (
     const record = await transition(deps, event.caseId, 'NORMALISING');
     if (!record.extracted) throw new PipelineFailure('PIPELINE_INTERNAL', 'nothing was extracted to normalise');
 
-    const tableName = required('TABLE_NAME');
-    const stored = await readLexicon({ tableName });
-    const lexicon: Lexicon = stored ?? buildLexicon(deps.rulepack);
-    if (!stored) await writeLexicon({ tableName }, lexicon);
+    // The seed is built from the hash-pinned rulepack every time — pure, a
+    // few milliseconds — and only the accepted tier-3 answers come from the
+    // table. Caching the built lexicon would be both stale (the rulepack can
+    // be bumped under it) and broken (its Map and Sets do not survive a
+    // DynamoDB round-trip).
+    const store = { tableName: required('TABLE_NAME'), version: deps.rulepack.version };
+    const learned = await readLearnedAliases(store);
+    const lexicon: Lexicon = buildLexicon(deps.rulepack, learned);
 
     const normaliser = createNormaliser(lexicon, DEFAULT_TIER1, null);
     const lines = record.extracted.billTable.rows.map((row) => normaliser.normalise(row.lineRef, row.rawDescription));
@@ -42,6 +46,7 @@ export const handler = async (
     await emit(deps, event.caseId, 'Normalised', {
       tiers,
       lexiconVersion: normaliser.lexiconVersion,
+      learnedAliases: Object.keys(learned).length,
       unresolved: lines.filter((l) => l.categoryId === null).map((l) => l.rawDescription),
     });
     return { lines, tiers };

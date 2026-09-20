@@ -44,15 +44,16 @@ pnpm cdk:deploy                         # = web:build + cdk deploy --all. NOT `p
 #    FcWebStack.Url is the public URL. FcObservabilityStack.DashboardUrl is the dashboard.
 
 # 6. Smoke test.
-curl -s https://<FcWebStack.Url>/api/health   # ok:true, runner:"step-functions", signIn.cognito:true
-#    Then in the browser: sign up, "load demo pack", submit, watch the pipeline, verify.
+curl -s https://<FcWebStack.Url>/api/health   # ok:true, runner:"step-functions"
+#    Then in the browser: "fill with the worked example", submit, watch the pipeline, verify.
+#    There is nothing to sign up for — see §11.
 ```
 
 Three things to know before pressing enter:
 
 - **`pnpm cdk:deploy` is the whole system** — no manual steps between stacks. The API learns
   its public origin from the web stack through SSM, so for the few minutes between
-  `FcApiStack` and `FcWebStack` finishing, sign-in answers `Invalid origin`. Wait it out.
+  `FcApiStack` and `FcWebStack` finishing, CORS rejects the browser's origin. Wait it out.
 - **Prose is off by default.** The pipeline completes without Bedrock (`ProseWritten`
   says `skipped`). To turn it on: enable model access in the Bedrock console, confirm with
   the command in §3, then `pnpm cdk -- deploy --all -c fc:proseModelId=<model or profile id>`.
@@ -319,8 +320,8 @@ Api → Web (then Eval and Observability), from the explicit props in `bin/app.t
 - **The API learns its public origin from the web stack.** `FcWebStack` writes
   `/fc/web/origin` and `/fc/web/cognito-client-id` to SSM after it mints the distribution;
   the API Lambdas read them at cold start and re-check every 30 s while they are missing.
-  So between `FcApiStack` finishing and `FcWebStack` finishing — a few minutes — sign-in
-  answers `Invalid origin`. That is the stacks staying a DAG, not a fault.
+  So between `FcApiStack` finishing and `FcWebStack` finishing — a few minutes — the API
+  refuses the browser's origin. That is the stacks staying a DAG, not a fault.
 - **To add prose**, deploy with the model: `pnpm cdk -- deploy --all -c fc:proseModelId=…`.
   Without it the pipeline still completes; `ProseWritten` says `skipped`.
 
@@ -363,7 +364,7 @@ Things that must be changeable without a deploy live in SSM:
 | Parameter | Written by | Read by | Effect |
 |---|---|---|---|
 | `/fc/web/origin` | `FcWebStack` | the API Lambdas, at cold start | The public origin: better-auth's `baseURL`, the trusted origin for CORS and CSRF, the Cognito callback |
-| `/fc/web/cognito-client-id` | `FcWebStack` | the API Lambdas | Enables the Cognito button (§11). Absent → email and password only |
+| `/fc/web/cognito-client-id` | `FcWebStack` | the API Lambdas | Configures the Cognito provider (§11). Nothing in the UI offers it |
 | `/fc/rulepack/active` | `FcCoreStack` (`v1`) | nobody yet | Pointer to the live rulepack version. The handlers bundle v1 until this is consumed |
 | `/fc/normalisation/tau` | `FcCoreStack` (`0.08`) | nobody yet | Tier-2 embedding margin gate; tier 2 is not wired |
 
@@ -423,27 +424,82 @@ measured demo-corpus figures once they exist (`IMPLEMENTATION.md` §22.3), not e
 | `pnpm deploy` complains about projects | That is pnpm's own `deploy` command, not this repo's script | `pnpm cdk:deploy` |
 | `This stack uses assets, so the toolkit stack must be deployed` | Account not bootstrapped in `ap-south-1` | §4.3 |
 | `FcWebStack` deploy fails on `Source.asset` | `packages/web/dist` missing | `pnpm web:build` first |
-| Sign-in on the public URL answers `Invalid origin` right after a deploy | `FcApiStack` is up but `FcWebStack` has not yet written `/fc/web/origin` | Wait for `FcWebStack`; the API re-checks the parameter every 30 s |
-| The Cognito button is missing on the public URL | `/fc/web/cognito-client-id` is absent, or `/api/health` reports `signIn.cognito: false` | Deploy `FcWebStack`; check the parameter exists |
+| The public URL's API calls are refused as a bad origin right after a deploy | `FcApiStack` is up but `FcWebStack` has not yet written `/fc/web/origin` | Wait for `FcWebStack`; the API re-checks the parameter every 30 s |
+| Expecting a sign-in screen and not finding one | There is none, by design — nothing is gated | §11 |
 | Cognito Hosted UI says `redirect_mismatch` | The app client's callback URL is not `<origin>/api/auth/callback/cognito` | It is set from the distribution domain in `web-stack.ts`; a custom domain needs adding there |
 | Bedrock `AccessDeniedException` / `ValidationException: model not available` | Model access not enabled, or not offered in the region, or `fc:proseModelId` names a model the grant does not cover | §3 and §4.3 |
 | Case fails with `TEXTRACT_NO_TABLE_FOUND` on a scan that has a table | The parser found no column that reads as money, or Textract's job failed | Read `raw/textract/<caseId>/<kind>.json` (it expires in a day); `parse-tables.ts` documents the column heuristics |
 | Case stays in `EXTRACTING` for 30 minutes then fails | The Textract completion notice never arrived | Check `TextractCompleteDlq` and the topic's delivery logs; the state's timeout is the safety net |
 | Case fails with `REDACTION_FAILED_OPEN` | Comprehend errored (throttled, region, permission) | The gate fails closed by design; retry the case once the cause is fixed |
 | S3 access logs never appear | Log bucket encrypted with a CMK | Keep the log bucket on SSE-S3 (already the case) |
-| Locally: `Invalid origin` on sign-in | The browser's origin is not in `FC_TRUSTED_ORIGINS`, which trusts only `:5173` by default | Add the origin, or free `:5173`. `localhost` and `127.0.0.1` are *different origins* |
+| Locally: the browser's API calls are refused as a bad origin | The origin is not in `FC_TRUSTED_ORIGINS`, which trusts only `:5173` and `:8080` by default | Add the origin, or free `:5173`. `localhost` and `127.0.0.1` are *different origins* |
 | API exits at once with `BETTER_AUTH_SECRET must be set in production` | `NODE_ENV=production` with no secret | Set `BETTER_AUTH_SECRET` (on AWS it comes from Secrets Manager) |
 | Upload rejected at 413 by nginx, though the API allows 25 MB | `client_max_body_size` in front of the API | Already `30m` in `docker/nginx.conf`; raise both limits together |
 | Pipeline progress never moves in the browser | A proxy is buffering the SSE response | `proxy_buffering off` in `docker/nginx.conf`; on AWS the events route is on its own streaming origin |
 
 ---
 
-## 9. Deploying without AWS: the container path
+## 9. Running the whole thing locally: the sandbox
 
-The web bundle and the API also run as two containers. This is how the product is demonstrated
-when a Textract-backed deployment is not available, and how a reviewer sees the whole thing run
-from a checkout with nothing but Docker installed. `README.md` gives the three commands; this
-is the detail behind them.
+Nothing in §0–§8 is needed to run the product. There are two local paths, and neither touches
+an AWS account, a credential file or the network.
+
+### 9.1 Containers — the sandbox proper
+
+One command, Docker the only prerequisite, nothing left on the host afterwards:
+
+```bash
+docker compose up                    # api on :3000, Vite with HMR on :5173
+# open http://localhost:5173
+```
+
+That is the whole system as a reviewer sees it: upload a pack, watch the pipeline, read the
+findings, replay the certificate. Nothing is gated, so there is no account step (§11).
+
+Production-shaped, same-origin behind nginx — this is the one to demo:
+
+```bash
+docker compose --profile prod up     # api on :3000, built bundle on :8080
+# open http://localhost:8080          ← /api is proxied, so no CORS at all
+```
+
+And the rest of the box:
+
+```bash
+docker compose run --rm verify                               # the CI gate: typecheck · lint · dep:cruise · test · eval:assert
+docker compose run --rm eval run --count 200 --profile degraded   # the evaluation sweep
+docker compose down -v                                       # throw away every case and the database
+```
+
+### 9.2 No Docker — the toolchain path
+
+Node ≥ 22 and pnpm 11, then:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm dev                             # api :3000 and web :5173 in parallel
+```
+
+Vite proxies `/api` to `FC_API_URL ?? http://localhost:3000`, so the browser sees one origin.
+Two narrower entry points, when the API is not wanted at all:
+
+```bash
+pnpm web:dev                         # the UI alone — #/demo settles a full claim in the browser
+pnpm verify                          # typecheck · lint · dep:cruise · test
+```
+
+### 9.3 What the sandbox does and does not prove
+
+| Runs locally | Needs AWS |
+|---|---|
+| The whole settlement waterfall, to the paise | Reading a **scanned** document (Textract) |
+| Reconciliation, the zero-sum invariant, every finding and clause | Comprehend in the redaction gate (regexes alone locally) |
+| Upload → pipeline → SSE progress → correction → resume | Bedrock prose (`ProseWritten { skipped }` locally) |
+| Certificate issue and **replay verification** — the hash reproduces | A **signature** on that certificate (KMS; `signature: null` locally) |
+| The evaluation harness, corpus generation and the scoring gates | The public URL, and the Step Functions execution history |
+
+The sandbox therefore proves the arithmetic, the reconciliation and the replay end to end. AWS
+adds reading real scanned paper, and a URL to send someone.
 
 ### One Dockerfile, several targets
 
@@ -473,15 +529,16 @@ the host and not in the container.
 
 ### State, and how to throw it away
 
-The API keeps its SQLite auth database (`auth.sqlite`) and one directory per case under
-`FC_DATA_DIR`, which compose mounts as the `fc-data` volume. Accounts and cases therefore
-survive a rebuild and are removed by `docker compose down -v`.
+The API keeps one directory per case — and the better-auth SQLite database it still migrates
+but no longer gates on — under `FC_DATA_DIR`, which compose mounts as the `fc-data` volume.
+Cases therefore survive a rebuild, and `docker compose down -v` removes every trace. Without
+Docker the same state lives in `packages/api/data/`; deleting that directory is the same reset.
 
 ### Same-origin is load-bearing, not incidental
 
-`docker/nginx.conf` proxies `/api/` to the `api` service, so the session cookie is first-party
-and no CORS is involved — the same shape `FcWebStack` gives CloudFront. The same file does
-three things that are easy to get wrong:
+`docker/nginx.conf` proxies `/api/` to the `api` service, so no CORS is involved at all — the
+same shape `FcWebStack` gives CloudFront. The same file does three things that are easy to get
+wrong:
 
 - `proxy_buffering off` and `proxy_read_timeout 1h`, because `/api/cases/{id}/events` is a
   long-lived SSE stream and a buffering proxy makes it look like the pipeline has hung.
@@ -493,9 +550,10 @@ three things that are easy to get wrong:
 ### The one secret
 
 `BETTER_AUTH_SECRET` must be set wherever `NODE_ENV=production`; `loadEnv` throws rather than
-falling back to the development default. `FC_API_BASE_URL` and `FC_TRUSTED_ORIGINS` must name
-the origin the browser actually uses — including whether it is `localhost` or `127.0.0.1`, which
-are different origins to a cookie jar.
+falling back to the development default. Both compose profiles default `NODE_ENV` to
+`development`, so a plain `docker compose up` needs no secret and no `.env` file — set one only
+when you deliberately run the API as production. `FC_API_BASE_URL` and `FC_TRUSTED_ORIGINS` must
+name the origin the browser actually uses; `localhost` and `127.0.0.1` are different origins.
 
 ### What is *not* in the container
 
@@ -530,9 +588,11 @@ difference.
 | `GET /api/cases/{id}/certificate` | The issued certificate |
 | `GET /api/cases/{id}/verify` | Replay: re-run the engine over the pinned input and compare hashes; on AWS, also KMS `Verify` on the signature |
 
-Everything under `/api/cases` is behind a session, and every case is scoped to its owner. A case
-ID is content-addressed and guessable, so **ownership, not obscurity, is the access control** —
-someone else's case answers `404`, not `403`.
+Every case is *scoped* to an owner, but `/api/cases` is **not gated**. A request that carries a
+better-auth session is attributed to that user; a request without one is attributed to the shared
+guest owner (`GUEST_OWNER_ID` in `routes/cases.ts`). Scoping is still enforced between owners —
+a signed-in user's case answers `404` to anyone else — so turning the guest fallback back into a
+`401` is one line, and the session layer underneath it is untouched. See §11.
 
 ### Configuration
 
@@ -567,11 +627,25 @@ policy error from S3 on AWS), and sign-in from an untrusted origin is refused ou
 
 ---
 
-## 11. Sign-in, and Amazon Cognito
+## 11. Sign-in: present in the backend, absent from the product
 
-better-auth is the session layer everywhere: it mints the cookie, owns the `user` and
-`session` rows, and every `/api/cases` route asks it who the caller is. What changes by
-deployment is only where those rows live — SQLite locally, the DynamoDB adapter on AWS.
+**There is no sign-in in the UI, and nothing is gated.** A policyholder who has just been
+short-changed by ₹1,10,280 should not be asked to create an account before being told so.
+Every screen — the worked example, an upload, a pipeline, a certificate — is reachable by
+whoever has the link, and `/api/cases` serves a request with no session as the shared guest
+owner (§10).
+
+What remains is the **session layer, wired and unused**:
+
+- `packages/api/src/auth.ts` still constructs better-auth, still migrates its tables, and
+  `/api/auth/*` is still mounted. Nothing calls it.
+- `routes/cases.ts` still *reads* a session and still scopes every case to an owner. It just
+  falls back to the guest owner instead of answering `401`.
+- The Cognito user pool, Hosted UI domain and app client are still deployed.
+
+So restoring gating is: replace the guest fallback with the `401` it used to return, and add a
+sign-in screen back to the web package. Nothing else moves. The rest of this section documents
+the Cognito wiring that is still in the stacks.
 
 Amazon Cognito comes in through **better-auth's Cognito social provider**
 (`socialProviders.cognito` in `packages/api/src/auth.ts`). That is the shape better-auth
@@ -591,13 +665,14 @@ How the pieces are placed:
 | User pool `fc-users`, Hosted UI domain | `FcApiStack` | Origin-independent; the Lambda gets the pool id, region and domain as environment |
 | App client `fc-web` | `FcWebStack` | Its callback URL is on the distribution's origin, which only exists here |
 | `/fc/web/cognito-client-id` | written by `FcWebStack`, read by the API | The last piece the Lambda needs, delivered without an `Fn::ImportValue` cycle |
-| The button | `packages/web/src/screens/SignIn.tsx` | Rendered only when `GET /api/health` says `signIn.cognito: true` |
+| The button | *removed* | There is no sign-in screen in `packages/web`. `GET /api/health` still reports `signIn.cognito`, and nothing reads it |
 
-The flow: the button calls `authClient.signIn.social({ provider: 'cognito' })` → better-auth
-redirects to `https://fc-<suffix>.auth.ap-south-1.amazoncognito.com/oauth2/authorize` → the
-Hosted UI signs the user up or in → Cognito redirects to
-`<origin>/api/auth/callback/cognito` → better-auth exchanges the code, stores the account row,
-sets the session cookie, and sends the browser to `/#/cases`.
+The flow, were a button put back: `authClient.signIn.social({ provider: 'cognito' })` →
+better-auth redirects to
+`https://fc-<suffix>.auth.ap-south-1.amazoncognito.com/oauth2/authorize` → the Hosted UI signs
+the user up or in → Cognito redirects to `<origin>/api/auth/callback/cognito` → better-auth
+exchanges the code, stores the account row, sets the session cookie, and sends the browser to
+`/#/cases`.
 
 If you would rather not have Cognito at all, delete the user pool and domain from
 `api-stack.ts`, the client and parameter from `web-stack.ts`, and the `COGNITO_*`

@@ -252,13 +252,18 @@ pnpm verify          # typecheck · lint · dep:cruise · test
 pnpm dev             # API on http://localhost:3000 + UI on http://localhost:5173
 ```
 
-Or in containers (Docker Desktop running):
+Or in containers (Docker Desktop running) — the whole system in a sandbox, no credentials,
+no `.env`, nothing left on the host:
 
 ```bash
-docker compose up                    # api + Vite dev server
-docker compose --profile prod up     # api + nginx-served bundle on :8080
+docker compose up                    # api :3000 + Vite dev server :5173
+docker compose --profile prod up     # api :3000 + nginx-served bundle :8080, /api same-origin
 docker compose run --rm verify       # the CI gate in a box
+docker compose down -v               # throw away every case
 ```
+
+Nothing is gated. There is no sign-in, no account and no session to obtain: open the URL and
+the worked example is already settled. `docs/aws.md` §9 is the detail, §11 is why.
 
 The detection-rate gate, which needs no AWS account either — it generates its own corpus
 from integer seeds, injects faults with known clause IDs and amounts, and scores the engine:
@@ -418,7 +423,7 @@ every IAM grant, every `cdk-nag` suppression with its reason — is
 | **KMS**                        | A symmetric key for documents; an asymmetric `ECC_NIST_P256` key that signs every certificate. `verify` returns KMS's own verdict on the signature.                                                                   |
 | **API Gateway + Function URL** | HTTP API for every route; a streaming Function URL for the one route that must stay open (SSE).                                                                                                                       |
 | **CloudFront**                 | The public URL: the bundle from a private bucket, and `/api/*` proxied to both origins so the session cookie is first-party.                                                                                          |
-| **Cognito**                    | Optional second sign-in, through better-auth's Cognito social provider — Hosted UI authenticates, better-auth still owns the session. Email/password stays on.                                                        |
+| **Cognito**                    | Deployed, and deliberately unused: the product is ungated. The pool, Hosted UI and better-auth social provider remain wired so gating is a one-line change, not a rebuild.                                                        |
 | **CloudWatch**                 | A dashboard of domain metrics — unresolved %, residual paise, engine ms, tier distribution — emitted as EMF by the handlers, and four alarms.                                                                         |
 
 ---
@@ -448,7 +453,7 @@ packages/
   engine/      the pure waterfall: interpreter, 7 steps, the invariant
   rulepack/    rules as data: clauses, categories, step order, rounding policy
   normalise/   tier 1 of the normalisation cascade — the lexicon, exact and trigram-fuzzy
-  api/         the case API: sign-in, uploads, the pipeline runner, events, certificates
+  api/         the case API: uploads, the pipeline runner, events, certificates (better-auth mounted, ungated)
   functions/   the Lambda handlers: one per state, the API on Lambda, the eval sweep
   infra/       AWS CDK — six stacks, cdk-nag clean
   eval/        corpus generation, fault injection, degradation, detection-rate harness
@@ -510,7 +515,7 @@ a clause against a line; it does not advise you on your rights.
 | `@fc/engine`    | **All seven step reducers implemented**, plus the interpreter, `Paise` arithmetic and the reconciliation invariant.                                                                                                                                                                            |
 | `@fc/rulepack`  | All six IRDAI bright-line clauses encoded as data, validated, hashed. 73 line categories with the category ↔ clause contract asserted at load time.                                                                                                                                            |
 | `@fc/normalise` | Tier 1 of the cascade: the lexicon built from the rulepack's aliases, exact and trigram-fuzzy, one calibrated threshold. Pure; tiers 2–3 plug in through an `Escalation` hook — **not yet wired**.                                                                                             |
-| `@fc/api`       | The product slice: better-auth sign-in (email/password, Cognito optional), typed uploads, the §11 pipeline as in-process stages, SSE events, checksum pause and correction resume, certificates and replay verification. Behind `CaseStore` / `DocumentStorage` / `PipelineRunner` interfaces. |
+| `@fc/api`       | The product slice: typed uploads, the §11 pipeline as in-process stages, SSE events, checksum pause and correction resume, certificates and replay verification. better-auth is mounted and scopes cases to an owner, but gates nothing. Behind `CaseStore` / `DocumentStorage` / `PipelineRunner` interfaces. |
 | `@fc/functions` | **All handlers.** One per state of the state machine, the Hono app on Lambda (HTTP API + streaming URL), the DynamoDB `CaseStore` and better-auth adapter, the Textract parser with bbox provenance, the eval sweep.                                                                           |
 | `@fc/infra`     | **All six stacks**, synthesising clean under `cdk-nag`. Bedrock prose opt-in; tiers 2–3, Bedrock document classification and Guardrails not yet wired — the gaps are listed in [`docs/aws.md` §2](docs/aws.md).                                                                                |
 | `@fc/eval`      | Seeded corpus over four admission archetypes, six fault operators, lawful controls, a degradation profile, the threshold sweep, the two-profile `eval:assert` gate. PDF rendering (and so a real Textract measurement) still to come.                                                          |

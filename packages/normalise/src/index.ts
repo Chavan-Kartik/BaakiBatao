@@ -9,6 +9,6 @@
 export { normaliseText } from './text';
 export { trigrams, similarity } from './trigram';
 export { buildLexicon } from './lexicon';
-export type { Lexicon, LexiconEntry } from './lexicon';
+export type { Lexicon, LexiconEntry, LearnedAliases } from './lexicon';
 export { resolveTier1, createNormaliser, DEFAULT_TIER1 } from './cascade';
 export type { Tier1Options, Tier1Result, Normaliser, Escalation } from './cascade';

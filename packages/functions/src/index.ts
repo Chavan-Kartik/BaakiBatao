@@ -34,6 +34,7 @@ export type { RedactedText, RedactionOutcome } from './shared/redacted';
 export { DynamoCaseStore } from './store/dynamo-store';
 export { S3DocumentStorage } from './store/documents';
 export { dynamoAuthAdapter } from './store/auth-adapter';
+export { readLearnedAliases, learnAlias } from './store/lexicon';
 export { sfnRunner } from './api/runner';
 export { parseBlocks, money, moneyLike } from './pipeline/parse-tables';
 export type { ParsedDocument } from './pipeline/parse-tables';
