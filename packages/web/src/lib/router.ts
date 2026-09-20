@@ -6,19 +6,17 @@ import { useEffect, useState } from 'react';
  * for a deep link. A handful of screens do not need a router library.
  *
  * Route table:
- *   #/                      landing (marketing, no session needed)
- *   #/u                     sign in / create account
+ *   #/                      landing
  *   #/cases                 the case list
  *   #/cases/<id>/<tab>      one case: pipeline | review | verify
  *   #/new                   claim pack intake
  *   #/demo                  the worked example, settled in the browser
  *
- * Auth does not gate any of these yet — the session is read for the sidebar
- * and for the API calls that need it, and everything else renders regardless.
+ * Nothing here is gated. There is no account to create and no session to
+ * wait on: every screen renders for whoever opens the link.
  */
 export type Route =
   | { name: 'landing' }
-  | { name: 'auth' }
   | { name: 'cases' }
   | { name: 'new' }
   | { name: 'demo' }
@@ -26,7 +24,6 @@ export type Route =
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
-  if (parts[0] === 'u') return { name: 'auth' };
   if (parts[0] === 'cases' && parts[1]) {
     const tab = parts[2] === 'review' || parts[2] === 'verify' ? parts[2] : 'pipeline';
     return { name: 'case', caseId: parts[1], tab };
@@ -41,7 +38,6 @@ export function parseRoute(hash: string): Route {
 export function href(route: Route): string {
   switch (route.name) {
     case 'landing': return '#/';
-    case 'auth': return '#/u';
     case 'cases': return '#/cases';
     case 'new': return '#/new';
     case 'demo': return '#/demo';

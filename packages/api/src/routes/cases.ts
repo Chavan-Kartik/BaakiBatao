@@ -28,14 +28,30 @@ export interface CaseRouteOptions {
 }
 
 /**
- * The case API (IMPLEMENTATION.md §18). Every route is behind a session, and
- * every case is scoped to its owner — a case ID is content-addressed and
- * guessable, so ownership, not obscurity, is the access control.
+ * The case API (IMPLEMENTATION.md §18).
+ *
+ * Cases are *scoped* to an owner, but the API is deliberately **not gated**:
+ * a request without a session is served as the shared guest owner below. The
+ * better-auth handler is still mounted and still mints real sessions, so
+ * turning ownership back into access control is a one-line change here — but
+ * nothing in the product asks anyone to sign in to look at their own bill.
  *
  * Uploads: `POST /cases` answers with one upload target per document. On AWS
  * those are presigned S3 POSTs so the bytes never touch our compute; locally
  * they are `PUT` routes on this server. The client does not know which.
  */
+
+/**
+ * The owner a request without a session is attributed to. A constant rather
+ * than a per-browser id, because the point of the demo is that the next person
+ * to open it sees the case the last one ran.
+ */
+export const GUEST_OWNER_ID = 'guest';
+
+const GUEST_SESSION = {
+  user: { id: GUEST_OWNER_ID, email: 'guest@localhost', name: 'Guest' },
+} as unknown as Session;
+
 export function caseRoutes(
   auth: Auth,
   deps: PipelineDeps,
@@ -45,9 +61,10 @@ export function caseRoutes(
   const app = new Hono<Vars>();
 
   app.use('*', async (c, next) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    if (!session) return c.json({ error: 'sign in to continue' }, 401);
-    c.set('session', session);
+    // A real session is honoured when the browser happens to carry one; its
+    // absence is not an error, it is the ordinary case.
+    const session = await auth.api.getSession({ headers: c.req.raw.headers }).catch(() => null);
+    c.set('session', session ?? GUEST_SESSION);
     await next();
   });
 

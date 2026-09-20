@@ -15,7 +15,7 @@ import {
 import { useState } from 'react';
 import { IntroLoader } from '../components/extras/intro-loader';
 import { RegulatoryMarquee } from '../components/extras/marquee';
-import { BRAND } from '../lib/brand';
+import { BRAND, BRAND_MARK } from '../lib/brand';
 import { STEP_LABEL } from '../lib/labels';
 import { href } from '../lib/router';
 
@@ -39,9 +39,9 @@ const INK = 'bg-[#0b0b0b] text-[#fbfbf9]';
 const PAPER = 'bg-[#fbfbf9] text-[#0b0b0b]';
 
 const PILL_DARK =
-  'inline-flex h-10 items-center rounded-full bg-[#0b0b0b] px-5 text-[13px] font-medium text-[#fbfbf9] transition-colors hover:bg-[#2a2a2a]';
+  'inline-flex h-9 items-center rounded-full bg-[#0b0b0b] px-4.5 text-[12.5px] font-medium text-[#fbfbf9] transition-colors hover:bg-[#2a2a2a]';
 const PILL_LIGHT =
-  'inline-flex h-10 items-center rounded-full bg-[#e7e7e3] px-5 text-[13px] font-medium text-[#0b0b0b] transition-colors hover:bg-[#dcdcd7]';
+  'inline-flex h-9 items-center rounded-full bg-[#e7e7e3] px-4.5 text-[12.5px] font-medium text-[#0b0b0b] transition-colors hover:bg-[#dcdcd7]';
 
 /* ------------------------------------------------------------------ */
 /* Content                                                             */
@@ -201,11 +201,11 @@ export function Landing() {
 function Nav() {
   return (
     <header className="relative z-10">
-      <div className="mx-auto grid h-[76px] w-full max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
-        <a href={href({ name: 'landing' })} className="text-[22px] font-bold tracking-[-0.05em]">
+      <div className="mx-auto grid h-[68px] w-full max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:px-8">
+        <a href={href({ name: 'landing' })} className="text-[19px] font-bold tracking-[-0.05em]">
           {BRAND}
         </a>
-        <nav className="hidden items-center gap-4 text-[14px] font-medium md:flex">
+        <nav className="hidden items-center gap-4 text-[13px] font-medium md:flex">
           <a href="#product" className="hover:opacity-60">
             Product
           </a>
@@ -217,11 +217,11 @@ function Nav() {
           </a>
         </nav>
         <div className="flex items-center justify-end gap-2">
+          <a href={href({ name: 'demo' })} className={`${PILL_LIGHT} max-sm:hidden`}>
+            Run the worked example
+          </a>
           <a href={href({ name: 'cases' })} className={PILL_DARK}>
             Open the workspace
-          </a>
-          <a href={href({ name: 'auth' })} className={`${PILL_LIGHT} max-sm:hidden`}>
-            Sign in
           </a>
         </div>
       </div>
@@ -234,10 +234,10 @@ function Nav() {
 function Hero() {
   return (
     <section className="mx-auto w-full max-w-[1400px] px-4 pt-24 sm:px-6 lg:px-8 lg:pt-36">
-      <h1 className="max-w-[1180px] text-[clamp(40px,7vw,100px)] font-semibold leading-[0.96] tracking-[-0.05em]">
+      <h1 className="max-w-[1180px] text-[clamp(34px,5.6vw,80px)] font-semibold leading-[0.96] tracking-[-0.05em]">
         The insurer paid less than the policy allows. Here is the arithmetic.
       </h1>
-      <p className="mt-40 max-w-[470px] text-[18px] font-medium leading-[1.25] tracking-[-0.02em] lg:mt-56">
+      <p className="mt-32 max-w-[440px] text-[16px] font-medium leading-[1.25] tracking-[-0.02em] lg:mt-44">
         {BRAND} walks a hospital bill through the settlement waterfall the policy describes, line by
         line, and separates the deductions that hold up from the ones that do not.
       </p>
@@ -254,13 +254,13 @@ function Proof() {
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PROOF.map((p, i) => (
           <li key={p.figure} className={`relative flex aspect-[0.9] flex-col justify-between p-3 ${INK}`}>
-            <p className="text-[clamp(40px,3.8vw,56px)] font-semibold leading-none tracking-[-0.04em]">
+            <p className="text-[clamp(32px,3vw,46px)] font-semibold leading-none tracking-[-0.04em]">
               {p.figure}
             </p>
             <div className="flex flex-1 items-center justify-center px-4">
               <ProofArt kind={p.art} />
             </div>
-            <p className="max-w-[240px] text-[14px] font-medium leading-[1.2] tracking-[-0.02em]">{p.caption}</p>
+            <p className="max-w-[230px] text-[13px] font-medium leading-[1.2] tracking-[-0.02em]">{p.caption}</p>
             {i === 0 && <Square className="absolute bottom-3 right-3" />}
           </li>
         ))}
@@ -318,7 +318,7 @@ function ProofArt({ kind }: { kind: (typeof PROOF)[number]['art'] }) {
   if (kind === 'boxed') {
     return (
       <div className="relative">
-        <div className="border-[3px] border-[#fbfbf9] px-4 py-1.5 text-[34px] font-semibold leading-none tracking-[-0.03em]">
+        <div className="border-[3px] border-[#fbfbf9] px-4 py-1.5 text-[29px] font-semibold leading-none tracking-[-0.03em]">
           I.29
         </div>
         <Square className="absolute -bottom-2 -right-3" />
@@ -350,10 +350,10 @@ function ProofArt({ kind }: { kind: (typeof PROOF)[number]['art'] }) {
 function Showcase() {
   return (
     <section id="product" className="mx-auto w-full max-w-[1400px] px-4 pt-36 sm:px-6 lg:px-8 lg:pt-48">
-      <h2 className="text-center text-[clamp(34px,4.3vw,60px)] font-semibold leading-[1.02] tracking-[-0.045em]">
+      <h2 className="text-center text-[clamp(28px,3.6vw,50px)] font-semibold leading-[1.02] tracking-[-0.045em]">
         A calculator, not an oracle.
       </h2>
-      <p className="mx-auto mt-10 max-w-[640px] text-center text-[clamp(22px,2.4vw,32px)] font-medium leading-[1.15] tracking-[-0.03em]">
+      <p className="mx-auto mt-10 max-w-[640px] text-center text-[clamp(18px,2vw,27px)] font-medium leading-[1.15] tracking-[-0.03em]">
         It reads the pack like a model would. It settles the bill like code does.
       </p>
 
@@ -432,26 +432,26 @@ function Features() {
   return (
     <section className="mx-auto w-full max-w-[1400px] px-4 pt-32 sm:px-6 lg:px-8 lg:pt-44">
       <Eyebrow className="justify-center">Features</Eyebrow>
-      <h2 className="mx-auto mt-4 max-w-[680px] text-center text-[clamp(28px,3.2vw,44px)] font-semibold leading-[1.05] tracking-[-0.04em]">
+      <h2 className="mx-auto mt-4 max-w-[680px] text-center text-[clamp(24px,2.7vw,37px)] font-semibold leading-[1.05] tracking-[-0.04em]">
         Upload the claim pack. Walk the waterfall. Verify the certificate.
       </h2>
 
       <ul className="mt-24 grid gap-2.5 lg:grid-cols-3">
         {FEATURES.map((f, i) => (
-          <li key={f.n} className={`relative flex min-h-[560px] flex-col p-3 ${INK}`}>
+          <li key={f.n} className={`relative flex min-h-[500px] flex-col p-3 ${INK}`}>
             <Square className="absolute right-0 top-0" size={24} />
             <div className="flex items-start justify-between gap-6">
-              <h3 className="max-w-[300px] text-[clamp(24px,2vw,30px)] font-semibold leading-[1.05] tracking-[-0.035em]">
+              <h3 className="max-w-[300px] text-[clamp(20px,1.7vw,25px)] font-semibold leading-[1.05] tracking-[-0.035em]">
                 {f.title}
               </h3>
-              <span className="mt-6 text-[30px] font-semibold leading-none tracking-[-0.04em]">{f.n}</span>
+              <span className="mt-5 text-[26px] font-semibold leading-none tracking-[-0.04em]">{f.n}</span>
             </div>
             <div className="flex flex-1 items-center justify-center py-10">
               {i === 0 && <UploadMock />}
               {i === 1 && <FindingMock />}
               {i === 2 && <CertificateMock />}
             </div>
-            <p className="max-w-[380px] text-[16px] font-medium leading-[1.25] tracking-[-0.02em]">{f.body}</p>
+            <p className="max-w-[370px] text-[14.5px] font-medium leading-[1.25] tracking-[-0.02em]">{f.body}</p>
           </li>
         ))}
       </ul>
@@ -573,8 +573,8 @@ function Findings() {
       <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-0 pt-8 sm:px-6 lg:px-3">
         <div className="grid gap-10 lg:grid-cols-[220px_1fr_220px]">
           <div>
-            <p className="text-[46px] font-semibold leading-none tracking-[-0.04em]">1</p>
-            <p className="mt-6 max-w-[130px] text-[20px] font-medium leading-[1.05] tracking-[-0.03em]">
+            <p className="text-[38px] font-semibold leading-none tracking-[-0.04em]">1</p>
+            <p className="mt-6 max-w-[130px] text-[17px] font-medium leading-[1.05] tracking-[-0.03em]">
               How a dispute is named
             </p>
           </div>
@@ -582,7 +582,7 @@ function Findings() {
           <div className="pt-4 lg:pt-32">
             <blockquote
               key={i}
-              className="max-w-[800px] text-[clamp(22px,2.4vw,34px)] font-medium leading-[1.12] tracking-[-0.03em] animate-in fade-in duration-500"
+              className="max-w-[800px] text-[clamp(18px,2vw,28px)] font-medium leading-[1.12] tracking-[-0.03em] animate-in fade-in duration-500"
             >
               {f.quote}
             </blockquote>
@@ -592,8 +592,8 @@ function Findings() {
                 <Check className="size-9" strokeWidth={2} />
               </div>
               <div>
-                <p className="text-[18px] font-semibold tracking-[-0.02em]">{f.who}</p>
-                <p className="text-[13px] text-[#fbfbf9]/60">{f.role}</p>
+                <p className="text-[16px] font-semibold tracking-[-0.02em]">{f.who}</p>
+                <p className="text-[12px] text-[#fbfbf9]/60">{f.role}</p>
               </div>
             </div>
 
@@ -616,7 +616,7 @@ function Findings() {
                   <ArrowRight className="size-3.5" strokeWidth={2.5} />
                 </button>
               </div>
-              <div className="flex gap-6 text-[16px] font-semibold tracking-[-0.02em]">
+              <div className="flex gap-6 text-[14px] font-semibold tracking-[-0.02em]">
                 {FINDINGS.map((x, n) => (
                   <button
                     key={x.tab}
@@ -642,7 +642,7 @@ function Findings() {
           </div>
         </div>
 
-        <p className="mt-16 text-[clamp(56px,7vw,104px)] font-bold leading-[0.9] tracking-[-0.05em]">{f.clause}</p>
+        <p className="mt-16 text-[clamp(44px,5.6vw,84px)] font-bold leading-[0.9] tracking-[-0.05em]">{f.clause}</p>
         <p className="mt-3 pb-3 text-[11px] text-[#fbfbf9]/45">
           Amounts in the findings above are illustrative. The unresolved bucket is a feature: a line the
           engine cannot place is named as such, never guessed at.
@@ -659,7 +659,7 @@ function Pipeline() {
     <section id="pipeline" className="mx-auto w-full max-w-[1120px] px-4 pt-32 sm:px-6 lg:px-8 lg:pt-44">
       <div className="flex flex-wrap items-baseline gap-x-8 gap-y-4">
         <Eyebrow>Pipeline</Eyebrow>
-        <h2 className="text-[clamp(28px,3.2vw,44px)] font-semibold leading-[1.05] tracking-[-0.04em]">
+        <h2 className="text-[clamp(24px,2.7vw,37px)] font-semibold leading-[1.05] tracking-[-0.04em]">
           Fourteen functions, one state machine, and nothing adjudicates until the ledger balances.
         </h2>
       </div>
@@ -676,7 +676,7 @@ function Pipeline() {
                   {String(n + 1).padStart(2, '0')}
                 </span>
                 <span
-                  className={`text-[clamp(18px,1.8vw,24px)] font-semibold tracking-[-0.03em] ${
+                  className={`text-[clamp(15px,1.5vw,20px)] font-semibold tracking-[-0.03em] ${
                     branch ? 'text-[#fbfbf9]/55' : last ? 'text-[#5eead4]' : ''
                   }`}
                 >
@@ -701,7 +701,7 @@ function Pipeline() {
               key={id}
               className="group flex flex-col gap-1 border-b border-[#0b0b0b]/10 py-2 last:border-b-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
             >
-              <span className="text-[clamp(24px,2.4vw,32px)] font-medium tracking-[-0.035em] text-[#0b0b0b]/35 transition-colors group-hover:text-[#0b0b0b]">
+              <span className="text-[clamp(20px,2vw,27px)] font-medium tracking-[-0.035em] text-[#0b0b0b]/35 transition-colors group-hover:text-[#0b0b0b]">
                 {STEP_LABEL[id]}
               </span>
               <span className="text-[11px] font-medium uppercase tracking-[0.02em] text-[#0b0b0b]/40 sm:shrink-0 sm:text-right">
@@ -725,10 +725,10 @@ function Security() {
     <section id="security" className="mx-auto w-full max-w-[1120px] px-4 pt-32 sm:px-6 lg:px-8 lg:pt-44">
       <Eyebrow accent>Security</Eyebrow>
       <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_1fr]">
-        <h2 className="max-w-[420px] text-[clamp(32px,3.6vw,48px)] font-semibold leading-[1.02] tracking-[-0.045em]">
+        <h2 className="max-w-[420px] text-[clamp(27px,3vw,40px)] font-semibold leading-[1.02] tracking-[-0.045em]">
           Nothing personal reaches a model.
         </h2>
-        <div className="space-y-6 text-[16px] font-medium leading-[1.25] tracking-[-0.02em] lg:pt-2">
+        <div className="space-y-6 text-[14.5px] font-medium leading-[1.25] tracking-[-0.02em] lg:pt-2">
           <p>
             Built for the most personal documents a household owns, against a rule that has been public
             since June 2020 and that almost nobody has read.
@@ -748,9 +748,9 @@ function Security() {
 
       <ul className="mt-24 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:grid-cols-6">
         {CONTROLS.map(({ icon: Icon, label }) => (
-          <li key={label} className="flex flex-col items-center gap-6 text-center">
-            <Icon className="size-16" strokeWidth={1.25} />
-            <span className="text-[13px] font-medium tracking-[-0.01em]">{label}</span>
+          <li key={label} className="flex flex-col items-center gap-5 text-center">
+            <Icon className="size-14" strokeWidth={1.25} />
+            <span className="text-[12px] font-medium tracking-[-0.01em]">{label}</span>
           </li>
         ))}
       </ul>
@@ -765,8 +765,8 @@ function BuiltOn() {
     <section className={`mt-40 lg:mt-52 ${INK}`}>
       <div className="mx-auto flex w-full max-w-[1440px] flex-col px-3 pb-6 pt-3">
         <div className="flex flex-col items-start gap-1 lg:flex-row lg:gap-8">
-          <p className="pt-2 text-[16px] font-medium">Built on</p>
-          <p className="text-[clamp(44px,8.4vw,124px)] font-bold uppercase leading-[0.86] tracking-[-0.05em]">
+          <p className="pt-2 text-[14.5px] font-medium">Built on</p>
+          <p className="text-[clamp(36px,7vw,104px)] font-bold uppercase leading-[0.86] tracking-[-0.05em]">
             AWS Step Functions
             <br />
             Amazon Textract
@@ -778,14 +778,14 @@ function BuiltOn() {
         </div>
 
         <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-          <p className="max-w-[520px] text-[16px] font-semibold leading-[1.2] tracking-[-0.02em]">
+          <p className="max-w-[520px] text-[14.5px] font-semibold leading-[1.2] tracking-[-0.02em]">
             We do not tell you your insurer cheated you. We tell you, line by line, which part of your
             deduction we can defend, which part we can challenge, and which part we honestly cannot
             judge.
           </p>
           <div className="text-left lg:text-right">
-            <p className="text-[16px] font-medium">with</p>
-            <p className="text-[clamp(36px,5.6vw,80px)] font-bold uppercase leading-[0.9] tracking-[-0.05em]">
+            <p className="text-[14.5px] font-medium">with</p>
+            <p className="text-[clamp(30px,4.7vw,67px)] font-bold uppercase leading-[0.9] tracking-[-0.05em]">
               Comprehend
               <br />
               Bedrock
@@ -804,7 +804,7 @@ function BuiltOn() {
 function Closing() {
   return (
     <section className="mx-auto w-full max-w-[1400px] px-4 py-40 text-center sm:px-6 lg:px-8 lg:py-56">
-      <h2 className="mx-auto max-w-[760px] text-[clamp(40px,5.6vw,78px)] font-semibold leading-[0.98] tracking-[-0.05em]">
+      <h2 className="mx-auto max-w-[760px] text-[clamp(33px,4.7vw,65px)] font-semibold leading-[0.98] tracking-[-0.05em]">
         The arithmetic, not the adjective.
       </h2>
       <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -837,8 +837,8 @@ function Footer() {
     {
       title: 'Work with it',
       links: [
-        { label: 'Sign in', to: href({ name: 'auth' }) },
-        { label: 'New case', to: href({ name: 'new' }) },
+        { label: 'Upload a claim pack', to: href({ name: 'new' }) },
+        { label: 'Open the workspace', to: href({ name: 'cases' }) },
       ],
     },
     {
@@ -863,8 +863,8 @@ function Footer() {
         <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:max-w-[880px]">
           {cols.map((c) => (
             <div key={c.title}>
-              <p className="text-[20px] font-semibold tracking-[-0.03em]">{c.title}</p>
-              <ul className="mt-1.5 space-y-0.5 text-[15px] font-medium">
+              <p className="text-[17px] font-semibold tracking-[-0.03em]">{c.title}</p>
+              <ul className="mt-1.5 space-y-0.5 text-[13.5px] font-medium">
                 {c.links.map((l) => (
                   <li key={l.label}>
                     <a
@@ -882,7 +882,7 @@ function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-wrap gap-5 text-[13px] font-medium">
+        <div className="mt-12 flex flex-wrap gap-5 text-[12px] font-medium">
           <a href={`${REPO}/blob/main/docs/learning.md`} target="_blank" rel="noreferrer" className="hover:opacity-60">
             Method
           </a>
@@ -906,11 +906,11 @@ function Footer() {
             fill="#fbfbf9"
             fontFamily="inherit"
           >
-            {BRAND}
+            {BRAND_MARK}
           </text>
         </svg>
 
-        <p className="mt-6 text-[13px] font-medium">© {new Date().getFullYear()} Settlement Reconstructor.</p>
+        <p className="mt-6 text-[12px] font-medium">© {new Date().getFullYear()} {BRAND}. A settlement reconstructor.</p>
       </div>
     </footer>
   );
@@ -928,7 +928,7 @@ function Eyebrow({
   className?: string;
 }) {
   return (
-    <p className={`flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.02em] ${className}`}>
+    <p className={`flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.04em] ${className}`}>
       <span className={`size-2 rounded-full ${accent ? 'bg-[#0f766e]' : 'bg-current'}`} />
       {children}
     </p>

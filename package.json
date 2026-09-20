@@ -30,7 +30,7 @@
     "dev": "pnpm --parallel --filter @fc/api --filter @fc/web dev",
     "cdk": "pnpm --filter @fc/infra exec cdk",
     "cdk:synth": "pnpm --filter @fc/infra exec cdk synth",
-    "deploy": "pnpm --filter @fc/infra exec cdk deploy --all",
+    "cdk:deploy": "pnpm web:build && pnpm --filter @fc/infra exec cdk deploy --all",
     "verify": "pnpm typecheck && pnpm lint && pnpm dep:cruise && pnpm test"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BRAND } from '../../lib/brand';
+import { BRAND_MARK } from '../../lib/brand';
 
 /**
  * The landing page's entrance.
@@ -15,7 +15,7 @@ import { BRAND } from '../../lib/brand';
  * a reload resets it. Reduced-motion users never see it.
  */
 
-const LETTERS = BRAND.split('');
+const LETTERS = BRAND_MARK.split('');
 
 /** Per-letter beat. Letters × 70ms is the sweep; the wipe follows it. */
 const STEP_MS = 70;

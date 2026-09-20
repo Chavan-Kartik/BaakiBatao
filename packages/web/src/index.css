@@ -1,5 +1,6 @@
 /**
- * Product UI tokens — dense claims workspace, not a marketing page.
+ * Product UI tokens. One system for the landing page and the workspace:
+ * paper, ink, a teal accent used sparingly, Geist for everything.
  */
 @import '@fontsource-variable/inter/index.css';
 @import '@fontsource-variable/geist/index.css';
@@ -12,30 +13,38 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Geist Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
   --font-geist: 'Geist Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 
-  --color-canvas: #f4f5f7;
+  --color-canvas: #f4f4f0;
+  --color-paper: #fbfbf9;
   --color-surface: #ffffff;
-  --color-border: #e2e5eb;
-  --color-border-strong: #c9ced8;
-  --color-text: #111827;
-  --color-text-2: #4b5563;
-  --color-text-3: #9ca3af;
+  --color-ink: #0b0b0b;
+  --color-ink-2: #1c1c1a;
+  --color-border: #e6e6e1;
+  --color-border-strong: #cfcfc8;
+  --color-text: #0b0b0b;
+  --color-text-2: #4b4b48;
+  --color-text-3: #8a8a86;
   --color-brand: #0f766e;
   --color-brand-soft: #ecfdf8;
+  --color-brand-bright: #5eead4;
   --color-disputed: #b42318;
   --color-disputed-soft: #fef3f2;
   --color-defended: #374151;
-  --color-defended-soft: #f3f4f6;
+  --color-defended-soft: #f3f4f1;
   --color-unresolved: #a16207;
   --color-unresolved-soft: #fefce8;
   --color-selected: #eef6f5;
-  --color-hover: #f8fafc;
+  --color-hover: #f5f5f1;
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+
+  --shadow-card: 0 1px 2px rgba(11, 11, 11, 0.04), 0 10px 30px -18px rgba(11, 11, 11, 0.18);
+  --shadow-lift: 0 2px 4px rgba(11, 11, 11, 0.05), 0 18px 40px -20px rgba(11, 11, 11, 0.28);
+  --shadow-pop: 0 1px 2px rgba(11, 11, 11, 0.06), 0 16px 48px -16px rgba(11, 11, 11, 0.32);
 }
 
 @layer base {
@@ -146,37 +155,37 @@
 :root {
   /* shadcn's semantic tokens, pointed at the product palette so the CLI
      components and the hand-written ones read as one system. */
-  --background: #f4f5f7;
-  --foreground: #111827;
+  --background: #f4f4f0;
+  --foreground: #0b0b0b;
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #0b0b0b;
   --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #0f766e;
-  --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #374151;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent: #eef6f5;
-  --accent-foreground: #0f766e;
+  --popover-foreground: #0b0b0b;
+  --primary: #0b0b0b;
+  --primary-foreground: #fbfbf9;
+  --secondary: #edede8;
+  --secondary-foreground: #0b0b0b;
+  --muted: #f3f3ef;
+  --muted-foreground: #6b6b67;
+  --accent: #f3f3ef;
+  --accent-foreground: #0b0b0b;
   --destructive: #b42318;
-  --border: #e2e5eb;
-  --input: #e2e5eb;
+  --border: #e6e6e1;
+  --input: #e6e6e1;
   --ring: #0f766e;
   --chart-1: #0f766e;
   --chart-2: #b42318;
   --chart-3: #a16207;
   --chart-4: #374151;
   --chart-5: #9ca3af;
-  --radius: 0.625rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #111827;
+  --radius: 0.75rem;
+  --sidebar: #0b0b0b;
+  --sidebar-foreground: #fbfbf9;
   --sidebar-primary: #0f766e;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #eef6f5;
   --sidebar-accent-foreground: #0f766e;
-  --sidebar-border: #e2e5eb;
+  --sidebar-border: rgba(251, 251, 249, 0.12);
   --sidebar-ring: #0f766e;
 }
 /*---break---
@@ -288,4 +297,20 @@
 .intro-panel {
   will-change: transform;
   animation: intro-wipe var(--intro-wipe) cubic-bezier(0.76, 0, 0.24, 1) var(--intro-wipe-delay) forwards;
+}
+
+/* Thin, quiet scrollbars inside panels; the page keeps the OS default. */
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 11, 11, 0.18) transparent;
+}
+.scroll-quiet::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-quiet::-webkit-scrollbar-thumb {
+  background: rgba(11, 11, 11, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }

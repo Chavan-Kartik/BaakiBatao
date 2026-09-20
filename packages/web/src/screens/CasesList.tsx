@@ -1,109 +1,148 @@
 import type { CaseSummary } from '@fc/contracts';
-import { Plus } from 'lucide-react';
+import { ArrowRight, FileStack, FlaskConical, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { BrightLizardLoader } from '../components/extras/bright-lizard-loader';
-import { api, ApiError } from '../lib/api';
+import { AppHeader } from '../components/AppHeader';
+import { Chip, ErrorNote, Page, PillLink } from '../components/primitives';
+import { Skeleton } from '../components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { api } from '../lib/api';
+import { DOCUMENT_LABEL } from '../lib/api';
 import { STATUS_LABEL } from '../lib/labels';
 import { href } from '../lib/router';
-import { cn } from '../lib/utils';
 
-type LoadError = { message: string; unauthenticated: boolean };
+/** Complete, failed, or still moving — the three things a row can be. */
+function statusTone(status: string): 'neutral' | 'brand' | 'disputed' | 'unresolved' {
+  if (status === 'FAILED') return 'disputed';
+  if (status === 'COMPLETE') return 'brand';
+  if (status === 'AWAITING_CORRECTION') return 'unresolved';
+  return 'neutral';
+}
 
 export function CasesList() {
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
-  const [error, setError] = useState<LoadError | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api
       .listCases()
       .then(setCases)
       .catch((e: unknown) => {
-        // Stop the loader either way — a failed read is not still in flight —
-        // and separate "you are not signed in" from a real failure, because
-        // they need different words on screen.
         setCases([]);
-        setError({
-          message: e instanceof Error ? e.message : 'Could not load your cases.',
-          unauthenticated: e instanceof ApiError && e.status === 401,
-        });
+        setError(e instanceof Error ? e.message : 'Could not load your cases.');
       });
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-6">
-      <div className="mb-5 flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[18px] font-semibold tracking-tight text-text">Cases</h1>
-          <p className="mt-1 text-[13px] text-text-2">Every claim pack you have submitted, and where it got to.</p>
-        </div>
+    <>
+      <AppHeader
+        title="Cases"
+        subtitle="Every claim pack that has been through the pipeline"
+        actions={
+          <PillLink href={href({ name: 'new' })} size="sm">
+            <Plus />
+            New case
+          </PillLink>
+        }
+      />
+
+      <Page wide className="space-y-3">
+        {error && <ErrorNote>{error}</ErrorNote>}
+
         <a
-          href={href({ name: 'new' })}
-          className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-brand px-3 text-[12px] font-medium text-white hover:bg-brand/90"
+          href={href({ name: 'demo' })}
+          className="group flex items-center gap-3.5 rounded-xl border border-brand/25 bg-brand-soft px-4 py-3.5 transition-colors hover:border-brand/40"
         >
-          <Plus className="size-3.5" />
-          New case
-        </a>
-      </div>
-
-      {error && !error.unauthenticated && (
-        <p className="rounded-sm bg-disputed-soft px-3 py-2 text-[12px] text-disputed">{error.message}</p>
-      )}
-
-      <div className="rounded-md border border-border bg-surface">
-        <a href={href({ name: 'demo' })} className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 hover:bg-hover">
-          <div>
-            <div className="text-[13px] font-medium text-text">Demo case — the worked example</div>
-            <div className="mt-0.5 text-[11px] text-text-3">Settled in your browser by the same engine. No upload, no account needed.</div>
-          </div>
-          <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 font-mono text-[10px] text-brand">in-browser</span>
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand text-white">
+            <FlaskConical className="size-4" strokeWidth={1.75} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-semibold tracking-[-0.02em] text-text">
+              The worked example
+            </span>
+            <span className="mt-0.5 block text-[11.5px] leading-snug text-text-2">
+              A full claim settled in your browser by the same engine the server runs. No upload, no
+              account, no waiting.
+            </span>
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-brand transition-transform group-hover:translate-x-0.5" />
         </a>
 
-        {cases === null ? (
-          <div className="flex items-center justify-center gap-2.5 px-4 py-8 text-[12px] text-text-3">
-            <BrightLizardLoader size="sm" tone="brand" />
-            Loading your cases
-          </div>
-        ) : error?.unauthenticated ? (
-          <div className="px-4 py-8 text-center">
-            <p className="text-[12px] text-text-2">Sign in to see the cases on your account.</p>
-            <a
-              href={href({ name: 'auth' })}
-              className="mt-3 inline-flex h-8 items-center rounded-sm bg-brand px-3 text-[12px] font-medium text-white hover:bg-brand/90"
-            >
-              Sign in
-            </a>
-          </div>
-        ) : cases.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[12px] text-text-3">No cases yet. Upload a claim pack to start one.</div>
-        ) : (
-          cases.map((c) => {
-            const done = c.status === 'COMPLETE';
-            const failed = c.status === 'FAILED';
-            return (
-              <a
-                key={c.caseId}
-                href={href({ name: 'case', caseId: c.caseId, tab: done ? 'review' : 'pipeline' })}
-                className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3 last:border-b-0 hover:bg-hover"
-              >
-                <div className="min-w-0">
-                  <div className="truncate font-mono text-[12px] text-text">{c.caseId}</div>
-                  <div className="mt-0.5 text-[11px] text-text-3">
-                    {new Date(c.createdAt).toLocaleString()} · {c.documents.length} documents
-                  </div>
-                </div>
-                <span
-                  className={cn(
-                    'shrink-0 rounded-sm px-1.5 py-0.5 font-mono text-[10px]',
-                    failed ? 'bg-disputed-soft text-disputed' : done ? 'bg-brand-soft text-brand' : 'bg-defended-soft text-defended',
-                  )}
-                >
-                  {STATUS_LABEL[c.status] ?? c.status}
-                </span>
-              </a>
-            );
-          })
-        )}
-      </div>
-    </div>
+        <section className="overflow-hidden rounded-xl border border-border bg-surface">
+          {cases === null ? (
+            <div className="space-y-2 p-3">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-11 rounded-lg" />
+              ))}
+            </div>
+          ) : cases.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
+              <span className="grid size-9 place-items-center rounded-lg border border-border bg-canvas text-text-3">
+                <FileStack className="size-4" strokeWidth={1.75} />
+              </span>
+              <p className="text-[13px] font-semibold tracking-[-0.02em] text-text">No cases yet</p>
+              <p className="max-w-[40ch] text-[12px] leading-relaxed text-text-3">
+                Upload a schedule, a wording, an itemised bill and the insurer's deduction sheet, and the
+                pipeline will do the rest.
+              </p>
+              <PillLink href={href({ name: 'new' })} size="sm" className="mt-1.5">
+                <Plus />
+                Upload a claim pack
+              </PillLink>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-full">Case</TableHead>
+                  <TableHead>Documents</TableHead>
+                  <TableHead>Opened</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cases.map((c) => {
+                  const done = c.status === 'COMPLETE';
+                  return (
+                    <TableRow
+                      key={c.caseId}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        window.location.hash = href({
+                          name: 'case',
+                          caseId: c.caseId,
+                          tab: done ? 'review' : 'pipeline',
+                        });
+                      }}
+                    >
+                      <TableCell className="py-2.5">
+                        <a
+                          href={href({ name: 'case', caseId: c.caseId, tab: done ? 'review' : 'pipeline' })}
+                          className="text-[12.5px] font-medium tracking-[-0.01em] text-text hover:underline"
+                        >
+                          Claim opened {new Date(c.createdAt).toLocaleDateString(undefined, {
+                            day: 'numeric',
+                            month: 'short',
+                          })}
+                        </a>
+                        <div className="mt-0.5 truncate text-[11px] text-text-3">
+                          {c.documents.map((d) => DOCUMENT_LABEL[d] ?? d).join(' · ')}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2.5 text-[12px] text-text-2">{c.documents.length}</TableCell>
+                      <TableCell className="py-2.5 text-[12px] text-text-2">
+                        {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </TableCell>
+                      <TableCell className="py-2.5 text-right">
+                        <Chip tone={statusTone(c.status)}>{STATUS_LABEL[c.status] ?? c.status}</Chip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </section>
+      </Page>
+    </>
   );
 }

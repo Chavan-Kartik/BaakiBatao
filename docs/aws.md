@@ -40,7 +40,7 @@ pnpm web:build
 pnpm cdk:synth
 
 # 5. Deploy everything. Order is Core → Pipeline → Api → Web → Eval → Observability.
-pnpm deploy                             # = cdk deploy --all; approve the IAM prompts, or add --require-approval never
+pnpm cdk:deploy                         # = web:build + cdk deploy --all. NOT `pnpm deploy`: that is pnpm's own command
 #    FcWebStack.Url is the public URL. FcObservabilityStack.DashboardUrl is the dashboard.
 
 # 6. Smoke test.
@@ -50,7 +50,7 @@ curl -s https://<FcWebStack.Url>/api/health   # ok:true, runner:"step-functions"
 
 Three things to know before pressing enter:
 
-- **`pnpm deploy` is the whole system** — no manual steps between stacks. The API learns
+- **`pnpm cdk:deploy` is the whole system** — no manual steps between stacks. The API learns
   its public origin from the web stack through SSM, so for the few minutes between
   `FcApiStack` and `FcWebStack` finishing, sign-in answers `Invalid origin`. Wait it out.
 - **Prose is off by default.** The pipeline completes without Bedrock (`ProseWritten`
@@ -63,7 +63,7 @@ Afterwards:
 
 ```bash
 pnpm cdk -- diff --all                  # before any redeploy: what will change
-pnpm deploy                             # redeploy; handlers rebundle from source at synth
+pnpm cdk:deploy                             # redeploy; handlers rebundle from source at synth
 pnpm cdk -- destroy --all               # clean teardown (buckets auto-empty, nothing retained)
 ```
 
@@ -309,7 +309,7 @@ them again.
 pnpm web:build                        # FcWebStack deploys packages/web/dist, so build first
 pnpm cdk:synth                        # no credentials needed; bundles the handlers, runs cdk-nag, fails on findings
 pnpm cdk -- diff --all                # what would change
-pnpm deploy                           # = cdk deploy --all; prints FcWebStack.Url when done
+pnpm cdk:deploy                       # = web:build + cdk deploy --all; prints FcWebStack.Url when done
 ```
 
 `cdk deploy --all` is the only deploy command anyone runs. The order is Core → Pipeline →
@@ -419,6 +419,8 @@ measured demo-corpus figures once they exist (`IMPLEMENTATION.md` §22.3), not e
 | `cdk synth` fails with `AwsSolutions-…` | A nag finding without a reviewed suppression | Fix the resource, or add a suppression *with a reason* next to the existing ones |
 | `cdk synth` fails with `'esbuild' is not recognized` | esbuild missing from the workspace root | `pnpm install` — it is a root dev dependency |
 | `Need to perform AWS calls for account …, but no credentials found` | No active profile | `export AWS_PROFILE=fc` and `aws sso login --profile fc` |
+| `Need to perform AWS calls for account A, but the current credentials are for B` | The profile reached `aws` but not CDK (e.g. `--profile` inside a `$(…)` subshell) | Set `AWS_PROFILE` for the shell — PowerShell: `$env:AWS_PROFILE = 'fc'` — or add `--profile fc` after `pnpm cdk --` |
+| `pnpm deploy` complains about projects | That is pnpm's own `deploy` command, not this repo's script | `pnpm cdk:deploy` |
 | `This stack uses assets, so the toolkit stack must be deployed` | Account not bootstrapped in `ap-south-1` | §4.3 |
 | `FcWebStack` deploy fails on `Source.asset` | `packages/web/dist` missing | `pnpm web:build` first |
 | Sign-in on the public URL answers `Invalid origin` right after a deploy | `FcApiStack` is up but `FcWebStack` has not yet written `/fc/web/origin` | Wait for `FcWebStack`; the API re-checks the parameter every 30 s |

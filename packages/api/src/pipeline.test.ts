@@ -65,11 +65,12 @@ async function waitForTerminal(caseId: string) {
 }
 
 describe('the case API', () => {
-  it('refuses every case route without a session', async () => {
+  it('serves a request without a session as the guest owner rather than refusing it', async () => {
     const saved = cookie;
     cookie = '';
-    expect((await req('/api/cases')).status).toBe(401);
-    expect((await req('/api/cases', { method: 'POST', json: { docs: [] } })).status).toBe(401);
+    expect((await req('/api/cases')).status).toBe(200);
+    // Still validated, just not gated: an empty pack is a 400, not a 401.
+    expect((await req('/api/cases', { method: 'POST', json: { docs: [] } })).status).toBe(400);
     cookie = saved;
   });
 

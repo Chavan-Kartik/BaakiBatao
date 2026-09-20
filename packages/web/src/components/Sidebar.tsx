@@ -1,144 +1,163 @@
-import { FileText, GitBranch, LayoutDashboard, LogOut, Plus, Scale, ShieldCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { AvatarPicker, avatars, type Avatar } from './AvatarPicker';
-import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
-import { authClient } from '../lib/auth-client';
-import { href, navigate, useRoute } from '../lib/router';
+import { BadgeCheck, FlaskConical, GitBranch, LayoutList, Plus, Scale, type LucideIcon } from 'lucide-react';
+import { BRAND, TAGLINE } from '../lib/brand';
+import { href, useRoute, type Route } from '../lib/router';
 import { cn } from '../lib/utils';
+import { Square } from './primitives';
 
-/**
- * A display preference, not an identity. The chosen avatar is keyed by the
- * signed-in email and kept in local storage, because picking a picture changes
- * nothing about what the account is allowed to do.
- */
-function useStoredAvatar(email: string | null) {
-  const [id, setId] = useState<number | null>(null);
-
-  useEffect(() => {
-    // `|| null` folds the unparseable cases — absent key, empty string, NaN —
-    // into "nothing stored yet".
-    setId(email ? Number(window.localStorage.getItem(`fc:avatar:${email}`)) || null : null);
-  }, [email]);
-
-  const selected = avatars.find((a) => a.id === id) ?? avatars[0];
-
-  function choose(avatar: Avatar) {
-    setId(avatar.id);
-    if (email) window.localStorage.setItem(`fc:avatar:${email}`, String(avatar.id));
-  }
-
-  return { selected, choose };
+interface Item {
+  readonly label: string;
+  readonly icon: LucideIcon;
+  readonly to: Route;
+  readonly active: boolean;
 }
 
-export function Sidebar({
-  session,
-  sessionPending,
-  caseId,
-}: {
-  session: { user: { email: string; name: string } } | null;
-  /** True until the first session read lands, so the card does not flash the signed-out state. */
-  sessionPending: boolean;
-  caseId: string | null;
-}) {
+/**
+ * Application navigation. Two groups: the things you can always do, and the
+ * things that only exist once a case does. Nothing here is an account menu,
+ * because there are no accounts — a claim is opened, worked and closed in one
+ * sitting by whoever has the pack.
+ */
+export function Sidebar({ caseId }: { caseId: string | null }) {
   const route = useRoute();
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const { selected: avatar, choose: chooseAvatar } = useStoredAvatar(session?.user.email ?? null);
 
-  const items = [
-    { id: 'cases', label: 'Cases', icon: LayoutDashboard, to: href({ name: 'cases' }), active: route.name === 'cases', enabled: true },
-    { id: 'new', label: 'New case', icon: Plus, to: href({ name: 'new' }), active: route.name === 'new', enabled: true },
-    { id: 'pipeline', label: 'Pipeline', icon: GitBranch, to: caseId ? href({ name: 'case', caseId, tab: 'pipeline' }) : '#', active: route.name === 'case' && route.tab === 'pipeline', enabled: caseId !== null },
-    { id: 'review', label: 'Review', icon: Scale, to: caseId ? href({ name: 'case', caseId, tab: 'review' }) : href({ name: 'demo' }), active: (route.name === 'case' && route.tab === 'review') || route.name === 'demo', enabled: true },
-    { id: 'verify', label: 'Verify', icon: ShieldCheck, to: caseId ? href({ name: 'case', caseId, tab: 'verify' }) : '#', active: route.name === 'case' && route.tab === 'verify', enabled: caseId !== null },
+  const workspace: Item[] = [
+    { label: 'Cases', icon: LayoutList, to: { name: 'cases' }, active: route.name === 'cases' },
+    { label: 'New case', icon: Plus, to: { name: 'new' }, active: route.name === 'new' },
+    { label: 'Worked example', icon: FlaskConical, to: { name: 'demo' }, active: route.name === 'demo' },
+  ];
+
+  const current: Item[] = caseId
+    ? [
+        {
+          label: 'Pipeline',
+          icon: GitBranch,
+          to: { name: 'case', caseId, tab: 'pipeline' },
+          active: route.name === 'case' && route.tab === 'pipeline',
+        },
+        {
+          label: 'Review',
+          icon: Scale,
+          to: { name: 'case', caseId, tab: 'review' },
+          active: route.name === 'case' && route.tab === 'review',
+        },
+        {
+          label: 'Certificate',
+          icon: BadgeCheck,
+          to: { name: 'case', caseId, tab: 'verify' },
+          active: route.name === 'case' && route.tab === 'verify',
+        },
+      ]
+    : [];
+
+  return (
+    <aside className="hidden w-[228px] shrink-0 flex-col border-r border-border bg-surface md:flex">
+      <a
+        href={href({ name: 'landing' })}
+        className="flex h-[52px] shrink-0 items-center gap-2.5 border-b border-border px-4 transition-colors hover:bg-hover"
+      >
+        <Square size={12} className="rounded-[2px]" />
+        <span className="min-w-0">
+          <span className="block truncate text-[14px] font-semibold leading-none tracking-[-0.035em] text-text">
+            {BRAND}
+          </span>
+          <span className="mt-1 block truncate text-[10.5px] leading-none text-text-3">{TAGLINE}</span>
+        </span>
+      </a>
+
+      <nav className="scroll-quiet flex-1 overflow-auto px-2 py-3">
+        <Group label="Workspace" items={workspace} />
+        {current.length > 0 && <Group label="This case" items={current} className="mt-5" />}
+      </nav>
+
+      <div className="border-t border-border p-3">
+        <p className="text-[11px] leading-snug text-text-3">
+          Every figure is produced by code over a versioned rulepack. Nothing here is a model's opinion.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+function Group({ label, items, className }: { label: string; items: Item[]; className?: string }) {
+  return (
+    <div className={className}>
+      <p className="px-2 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-text-3">{label}</p>
+      <ul className="space-y-0.5">
+        {items.map((item) => (
+          <li key={item.label}>
+            <a
+              href={href(item.to)}
+              aria-current={item.active ? 'page' : undefined}
+              className={cn(
+                'flex h-8 items-center gap-2.5 rounded-lg px-2 text-[12.5px] font-medium tracking-[-0.01em] transition-colors',
+                item.active ? 'bg-selected text-text' : 'text-text-2 hover:bg-hover hover:text-text',
+              )}
+            >
+              <item.icon
+                className={cn('size-4 shrink-0', item.active ? 'text-brand' : 'text-text-3')}
+                strokeWidth={1.75}
+              />
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** The same navigation as a scrollable strip, for a phone. */
+export function MobileNav({ caseId }: { caseId: string | null }) {
+  const route = useRoute();
+  const items: Item[] = [
+    { label: 'Cases', icon: LayoutList, to: { name: 'cases' }, active: route.name === 'cases' },
+    { label: 'New', icon: Plus, to: { name: 'new' }, active: route.name === 'new' },
+    { label: 'Example', icon: FlaskConical, to: { name: 'demo' }, active: route.name === 'demo' },
+    ...(caseId
+      ? ([
+          {
+            label: 'Pipeline',
+            icon: GitBranch,
+            to: { name: 'case', caseId, tab: 'pipeline' },
+            active: route.name === 'case' && route.tab === 'pipeline',
+          },
+          {
+            label: 'Review',
+            icon: Scale,
+            to: { name: 'case', caseId, tab: 'review' },
+            active: route.name === 'case' && route.tab === 'review',
+          },
+          {
+            label: 'Certificate',
+            icon: BadgeCheck,
+            to: { name: 'case', caseId, tab: 'verify' },
+            active: route.name === 'case' && route.tab === 'verify',
+          },
+        ] satisfies Item[])
+      : []),
   ];
 
   return (
-    <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-surface">
-      <a href={href({ name: 'landing' })} className="flex h-12 items-center gap-2 border-b border-border px-4 hover:bg-hover">
-        <FileText className="size-4 text-brand" strokeWidth={2} />
-        <div className="truncate text-[13px] font-semibold tracking-tight text-text">Settlement Reconstructor</div>
+    <nav className="scroll-quiet flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-surface px-3 py-2 md:hidden">
+      <a
+        href={href({ name: 'landing' })}
+        className="mr-1 shrink-0 text-[13px] font-semibold tracking-[-0.035em] text-text"
+      >
+        {BRAND}
       </a>
-
-      <nav className="flex flex-1 flex-col gap-0.5 p-2">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <a
-              key={item.id}
-              href={item.enabled ? item.to : undefined}
-              aria-disabled={!item.enabled}
-              className={cn(
-                'flex h-9 items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px]',
-                item.active ? 'bg-selected font-medium text-text' : item.enabled ? 'text-text-2 hover:bg-hover' : 'cursor-not-allowed text-text-3',
-              )}
-            >
-              <Icon className="size-4 shrink-0" strokeWidth={1.75} />
-              {item.label}
-              {!item.enabled && item.id !== 'cases' && item.id !== 'new' && (
-                <span className="ml-auto font-mono text-[10px] text-text-3">open a case</span>
-              )}
-            </a>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-border px-3 py-3">
-        {sessionPending ? (
-          <div className="flex items-center gap-2">
-            <span className="size-7 shrink-0 animate-pulse rounded-full bg-border" />
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <span className="block h-2.5 w-20 animate-pulse rounded-full bg-border" />
-              <span className="block h-2 w-28 animate-pulse rounded-full bg-border/60" />
-            </div>
-            <span className="sr-only">Checking your session</span>
-          </div>
-        ) : session ? (
-          <>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                aria-label="Change avatar"
-                className="size-7 shrink-0 overflow-hidden rounded-full border border-border bg-canvas transition-colors hover:border-brand [&_svg]:size-full"
-              >
-                {avatar.svg}
-              </button>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-medium text-text">{session.user.name}</p>
-                <p className="truncate text-[11px] text-text-3">{session.user.email}</p>
-              </div>
-              <button
-                type="button"
-                aria-label="Sign out"
-                onClick={() => authClient.signOut().then(() => navigate({ name: 'landing' }))}
-                className="shrink-0 rounded-sm p-1.5 text-text-3 hover:bg-hover hover:text-text"
-              >
-                <LogOut className="size-4" />
-              </button>
-            </div>
-
-            <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-              <DialogContent className="max-w-sm">
-                <DialogTitle className="sr-only">Choose your avatar</DialogTitle>
-                <AvatarPicker
-                  userName={session.user.name}
-                  userRole="Policyholder"
-                  onSelect={chooseAvatar}
-                />
-              </DialogContent>
-            </Dialog>
-          </>
-        ) : (
-          <div className="flex flex-col gap-1">
-            <a href={href({ name: 'auth' })} className="text-[12px] text-brand hover:underline">
-              Sign in
-            </a>
-            <span className="text-[11px] leading-snug text-text-3">
-              Work you do stays attached to your account. The demo case needs none.
-            </span>
-          </div>
-        )}
-      </div>
-    </aside>
+      {items.map((item) => (
+        <a
+          key={item.label}
+          href={href(item.to)}
+          className={cn(
+            'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium',
+            item.active ? 'bg-selected text-text' : 'text-text-2',
+          )}
+        >
+          <item.icon className="size-3.5" strokeWidth={1.75} />
+          {item.label}
+        </a>
+      ))}
+    </nav>
   );
 }

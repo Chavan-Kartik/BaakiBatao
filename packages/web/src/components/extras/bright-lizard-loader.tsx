@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * Bright Lizard glowing orbital pulse loader.
- * Inspired by dexter-st on UIverse, adapted to Settlement Reconstructor's
+ * Inspired by dexter-st on UIverse, adapted to BaakiBatao's
  * brand palette (brand teal #0f766e, amber #a16207, and crimson #b42318).
  */
 export function BrightLizardLoader({
