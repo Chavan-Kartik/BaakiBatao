@@ -20,7 +20,7 @@ import {
 import { STATUS_LABEL } from '@/lib/labels';
 import { href } from '@/lib/router';
 import { cn } from '@/lib/utils';
-import { ArrowUpDown, ChevronLeft, ChevronRight, FileText, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, FileText, Search } from 'lucide-react';
 
 interface CasesDataTableProps {
   cases: CaseSummary[];

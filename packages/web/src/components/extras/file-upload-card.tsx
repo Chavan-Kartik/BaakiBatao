@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import type { DocumentKind } from '@fc/contracts';
 import { DOCUMENT_LABEL } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, FileJson, FileText, FileUp, ShieldCheck, Trash2, X } from 'lucide-react';
+import { CheckCircle2, FileJson, FileText, FileUp, ShieldCheck, Trash2 } from 'lucide-react';
 import { ProgressBar } from './progress-bar';
 
 export interface FileSlot {
@@ -18,6 +18,12 @@ interface UploadCardProps {
   state: 'pending' | 'done' | null;
   disabled: boolean;
   onFile: (f: File | null) => void;
+  /**
+   * Byte-level progress for this upload, when we have it. `undefined` renders
+   * an indeterminate bar — we would rather show "working" than a percentage
+   * we cannot actually observe.
+   */
+  progress?: number;
 }
 
 export function FileUploadCard({
@@ -28,6 +34,7 @@ export function FileUploadCard({
   state,
   disabled,
   onFile,
+  progress,
 }: UploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -105,7 +112,14 @@ export function FileUploadCard({
           </div>
 
           {state === 'pending' && (
-            <ProgressBar value={75} size="sm" label="Encrypting & uploading..." showValue tone="brand" />
+            <ProgressBar
+              value={progress ?? 0}
+              indeterminate={progress === undefined}
+              size="sm"
+              label="Encrypting & uploading…"
+              showValue={progress !== undefined}
+              tone="brand"
+            />
           )}
         </div>
       ) : (
@@ -136,9 +150,16 @@ export function FileUploadCard({
 export function FileCollectionsShelf({
   slots,
   onClear,
+  disabled = false,
 }: {
   slots: Partial<Record<DocumentKind, FileSlot>>;
   onClear: () => void;
+  /**
+   * Set while the pack is in flight. Clearing a staged slot mid-upload would
+   * strand the upload loop with a document it can no longer read, so the
+   * shelf stops offering it rather than failing halfway through the pack.
+   */
+  disabled?: boolean;
 }) {
   const activeEntries = Object.entries(slots).filter(([, s]) => s !== undefined) as [DocumentKind, FileSlot][];
 
@@ -154,7 +175,8 @@ export function FileCollectionsShelf({
         <button
           type="button"
           onClick={onClear}
-          className="text-text-3 hover:text-disputed text-[11px] underline"
+          disabled={disabled}
+          className="text-text-3 hover:text-disputed text-[11px] underline disabled:cursor-not-allowed disabled:no-underline disabled:hover:text-text-3"
         >
           Clear all
         </button>

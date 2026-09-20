@@ -1,5 +1,5 @@
 import React from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { inr } from '@/lib/format';
 
@@ -82,7 +82,7 @@ export function SettlementWaterfallChart({ data = DEFAULT_DATA, className }: Wat
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(val, name) => (
+                formatter={(val) => (
                   <span className="font-mono text-xs font-semibold">{inr(Number(val))}</span>
                 )}
               />

@@ -5,6 +5,9 @@ which of them exist in the account today, and the exact steps to get from a fres
 to `cdk deploy --all`. The architecture rationale lives in `IMPLEMENTATION.md` §3.2 and §10;
 this page does not repeat it.
 
+The same product also runs without AWS, as two containers — that path is §9. The API's own
+endpoints, environment variables and deliberate stubs are §10, and what CI enforces is §11.
+
 Nothing on this page is needed to run the product locally. The engine is pure, the web UI
 settles the reference claim in the browser, and the evaluation harness generates its own
 corpus — `pnpm verify`, `pnpm eval:assert` and `pnpm web:dev` all work with no credentials.
@@ -15,8 +18,11 @@ and the hosted API.
 
 ## 1. What exists today, and what is specified
 
-Two CDK stacks are implemented and synthesise clean under `cdk-nag`'s `AwsSolutionsChecks`.
-Four more are specified in `IMPLEMENTATION.md` §10.2 and not yet written.
+Two CDK stacks are implemented, and both synthesize clean with no exceptions, pending
+findings, or unresolved `AwsSolutions` errors under `cdk-nag`'s `AwsSolutionsChecks` —
+23 Compliant / 1 reviewed Suppressed on `FcCoreStack`, 14 Compliant / 13 reviewed Suppressed on
+`FcWebStack`, measured on the current tree. Four more are specified in
+`IMPLEMENTATION.md` §10.2 and not yet written.
 
 | Stack | State | Contents |
 |---|---|---|
@@ -270,3 +276,155 @@ Textract pages (dominant), Bedrock tokens, Step Functions state transitions — 
 | `WebStack` deploy fails on `Source.asset` | `packages/web/dist` missing | `pnpm web:build` first |
 | Bedrock `AccessDeniedException` / `ValidationException: model not available` | Model access not enabled, or not offered in the region | §3 and §4.3 |
 | S3 access logs never appear | Log bucket encrypted with a CMK | Keep the log bucket on SSE-S3 (already the case) |
+| `Invalid origin` on sign-in | The browser's origin is not in `FC_TRUSTED_ORIGINS`, which trusts only `:5173` by default. A dev server that fell back to another port hits this | Add the origin (`FC_TRUSTED_ORIGINS=http://localhost:5174`), or free `:5173`. `localhost` and `127.0.0.1` are *different origins* — both are in the default list for that reason |
+| API exits at once with `BETTER_AUTH_SECRET must be set in production` | `NODE_ENV=production` with no secret, which `loadEnv` refuses rather than defaulting | Set `BETTER_AUTH_SECRET` |
+| Upload rejected at 413 by nginx, though the API allows 25 MB | `client_max_body_size` in front of the API | Already `30m` in `docker/nginx.conf`; raise both limits together |
+| Pipeline progress never moves in the browser | A proxy is buffering the SSE response | `proxy_buffering off` in `docker/nginx.conf`, or the equivalent on whatever terminates |
+
+---
+
+## 9. Deploying without AWS: the container path
+
+The web bundle and the API also run as two containers. This is how the product is demonstrated
+when a Textract-backed deployment is not available, and how a reviewer sees the whole thing run
+from a checkout with nothing but Docker installed. `README.md` gives the three commands; this
+is the detail behind them.
+
+### One Dockerfile, several targets
+
+`Dockerfile` is a single multi-stage build:
+
+| Target | What it is |
+|---|---|
+| `deps` | The workspace with dependencies installed from the lockfile alone. `pnpm fetch` runs *before* the source is copied, so that layer caches until `pnpm-lock.yaml` changes |
+| `verify` | The whole gate — `typecheck · lint · dep:cruise · test · eval:assert`. `docker build --target verify .` is CI in a box |
+| `api` | The case API on Node. `NODE_ENV=production`, `FC_DATA_DIR=/data`, volume `/data`, `EXPOSE 3000`, runs as `node`, health check on `/api/health` |
+| `eval` | The evaluation CLI: `docker run … run --count 200 --profile degraded` |
+| `web-build` | `pnpm web:build` |
+| `web` | nginx 1.27 serving `packages/web/dist` |
+
+### What `docker-compose.yml` brings up
+
+| Command | Services | Ports |
+|---|---|---|
+| `docker compose up` | `api` + `web-dev` (Vite with HMR, against bind-mounted source) | 3000, 5173 |
+| `docker compose --profile prod up` | `api` + `web` (nginx serving the built bundle) | 3000, 8080 |
+| `docker compose run --rm verify` | The CI gate, once | — |
+| `docker compose run --rm eval run --count 200 --profile degraded` | The eval sweep | — |
+
+`web-dev` shadows each package's `node_modules` with an anonymous volume, because pnpm's layout
+is symlinked per package and a host mount over the top of it produces a tree that resolves on
+the host and not in the container.
+
+### State, and how to throw it away
+
+The API keeps its SQLite auth database (`auth.sqlite`) and one directory per case under
+`FC_DATA_DIR`, which compose mounts as the `fc-data` volume. Accounts and cases therefore
+survive a rebuild and are removed by `docker compose down -v`.
+
+### Same-origin is load-bearing, not incidental
+
+`docker/nginx.conf` proxies `/api/` to the `api` service, so the session cookie is first-party
+and no CORS is involved. The same file does three things that are easy to get wrong:
+
+- `proxy_buffering off` and `proxy_read_timeout 1h`, because `/api/cases/{id}/events` is a
+  long-lived SSE stream and a buffering proxy makes it look like the pipeline has hung.
+- `client_max_body_size 30m`, above the API's own 25 MB per-document limit, so the error a user
+  sees is the API's named one rather than nginx's bare 413.
+- `index.html` `no-cache`, `/assets/` immutable — the same split `FcWebStack` gives CloudFront,
+  because a cached document pointing at deleted asset hashes is a blank page.
+
+### The one secret
+
+`BETTER_AUTH_SECRET` must be set wherever `NODE_ENV=production`; `loadEnv` throws rather than
+falling back to the development default. `FC_API_BASE_URL` and `FC_TRUSTED_ORIGINS` must name
+the origin the browser actually uses — including whether it is `localhost` or `127.0.0.1`, which
+are different origins to a cookie jar. Both are in §10, and the failure they cause is the second
+row of the new entries in §8.
+
+### What is *not* in the container
+
+The containers are the product slice, not the pipeline. No Textract, no Bedrock, no Step
+Functions: `FC_EXTRACTOR=structured` reads the JSON pack, and the certificate is issued unsigned
+(`signature: null`). A container deployment proves the arithmetic, the reconciliation and the
+replay end to end; the AWS deployment is what adds reading real scanned documents. §10 lists each
+stub and what it returns.
+
+---
+
+## 10. The API today: endpoints, configuration, and what is stubbed
+
+`packages/api` is the product slice without AWS — one Node process, Hono routes, filesystem
+storage, better-auth on Node's built-in `node:sqlite`. Every AWS piece in §1's second table is a
+swap behind an interface these routes already call.
+
+### Endpoints
+
+| Route | Purpose |
+|---|---|
+| `GET /api/health` | ok · active rulepack version and hash · which extractor loaded · auth migration result. This is the container health check |
+| `/api/auth/*` (GET, POST) | The better-auth handler: sign up, sign in, sign out, session |
+| `GET /api/cases` | The caller's cases |
+| `POST /api/cases` | Create a case. `201` with one upload target per declared document |
+| `PUT /api/cases/{id}/documents/{kind}` | The local upload target. Presigned S3 POSTs replace these on AWS; **the client already handles both**, so this is not a client change |
+| `POST /api/cases/{id}/submit` | Every declared document is in → run the pipeline. `202` |
+| `GET /api/cases/{id}` | Status, extracted bill, pinned input, reconstruction, failure |
+| `GET /api/cases/{id}/events` | SSE progress stream |
+| `POST /api/cases/{id}/corrections` | Human correction, then resume. `202` |
+| `GET /api/cases/{id}/certificate` | The issued certificate |
+| `GET /api/cases/{id}/verify` | Replay: re-run the engine over the pinned input and compare hashes |
+
+Everything under `/api/cases` is behind a session, and every case is scoped to its owner. A case
+ID is content-addressed and guessable, so **ownership, not obscurity, is the access control** —
+someone else's case answers `404`, not `403`.
+
+### Configuration
+
+All read in `packages/api/src/env.ts`, from the environment with development defaults:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `PORT` | `3000` | |
+| `FC_DATA_DIR` | `packages/api/data` | Case files, uploads, `auth.sqlite` |
+| `NODE_ENV` | `development` | `production` makes the secret mandatory and turns on secure cookies |
+| `BETTER_AUTH_SECRET` | a development placeholder | **Throws in production if unset** |
+| `FC_API_BASE_URL` | `http://localhost:$PORT` | Also trusted as an origin |
+| `FC_TRUSTED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated. Any other origin is refused with `Invalid origin` |
+| `FC_EXTRACTOR` | `structured` | `textract` selects the Textract extractor |
+
+### Deliberately stubbed, and what each one does instead
+
+| Stub | Today | Landed by |
+|---|---|---|
+| Certificate signature | `signature: null`, and `verify` reports `signatureValid: null`. The hash still reproduces, so replay is proven even though the signature is not | `PipelineStack` and the KMS `ECC_NIST_P256` key (§16) |
+| `FC_EXTRACTOR=textract` | Throws `EXTRACTOR_UNAVAILABLE` with the reason. A non-JSON document fails the same named way rather than being guessed at | `start-textract` / `textract-complete` (§11.3) |
+| Redaction | Format regexes only — no Comprehend PII pass | §13 |
+| Event delivery | The API polls its own store and streams over SSE; no queue, no Function URL | `ApiStack` |
+| Email verification | Off (`requireEmailVerification: false`) — no mail transport exists, so leaving it on would lock every account out | not scheduled |
+| Tier-2 normalisation | `/fc/normalisation/tau` is set but unconsumed (§5) | §14 |
+
+Two limits to know before a demo: a document over **25 MB** is refused with `413`, and sign-in
+from an untrusted origin is refused outright — a dev server that fell back to another port needs
+that origin added first (§8).
+
+---
+
+## 11. CI
+
+`.github/workflows/ci.yml` runs on every push and pull request and enforces the same gate as
+`docker build --target verify`:
+
+| Step | Fails when |
+|---|---|
+| `pnpm typecheck` | Any package does not typecheck |
+| `pnpm lint` | Any lint error |
+| `pnpm dep:cruise` | `packages/engine` imports the AWS SDK or a Node built-in. This is the purity rule, and a required check — see ADR 007 |
+| `pnpm test` | Any test fails |
+| Rulepack lock check | `packages/rulepack/data/v1.lock.json` is stale — a rule changed without regenerating it |
+| `pnpm web:build` | The UI does not build |
+| `pnpm cdk:synth --quiet` | A `cdk-nag` `AwsSolutions` finding without a reviewed suppression. Synthesis needs no credentials |
+| `pnpm eval:assert` | Detection precision or recall regresses against the committed baselines, a lawful deduction starts being disputed, or a lawful control drops out of the measured set |
+
+None of it needs AWS credentials, which is why it can run on every push. `pnpm verify` runs the
+first four locally, and `docker compose run --rm verify` runs the same set without a local
+toolchain.

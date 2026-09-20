@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpRight, CheckCircle2, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { inr } from '@/lib/format';
 import { cn } from '@/lib/utils';
 

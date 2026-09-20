@@ -1,11 +1,14 @@
 import type { DocumentKind } from '@fc/contracts';
 import { REQUIRED_DOCUMENT_KINDS } from '@fc/contracts';
 import { buildDemoPack } from '@fc/fixtures';
-import { CheckCircle2, FileJson, FileUp, X } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { api, ApiError, DOCUMENT_LABEL } from '../lib/api';
-import { navigate } from '../lib/router';
-import { cn } from '../lib/utils';
+import { FileJson } from 'lucide-react';
+import { useState } from 'react';
+import { BackButton } from '../components/extras/back-button';
+import { FileCollectionsShelf, FileUploadCard, type FileSlot } from '../components/extras/file-upload-card';
+import { LoadingButton } from '../components/extras/loading-button';
+import { ProgressBar } from '../components/extras/progress-bar';
+import { api, ApiError } from '../lib/api';
+import { href, navigate } from '../lib/router';
 
 const KINDS: readonly DocumentKind[] = [
   'POLICY_SCHEDULE', 'POLICY_WORDING', 'ITEMISED_BILL', 'DEDUCTION_SHEET', 'SETTLEMENT_LETTER', 'ENDORSEMENT',
@@ -20,7 +23,7 @@ const HINT: Record<DocumentKind, string> = {
   ENDORSEMENT: 'A consumables rider or other endorsement, if you bought one.',
 };
 
-type Slot = { file: File; contentType: string };
+type Slot = FileSlot;
 
 /**
  * Six typed dropzones. The type is what matters: a pack is not a pile of
@@ -35,6 +38,12 @@ export function NewCase() {
   const [error, setError] = useState<string | null>(null);
 
   const ready = REQUIRED_DOCUMENT_KINDS.every((k) => slots[k]);
+  const staged = KINDS.filter((k) => slots[k]).length;
+  const uploaded = KINDS.filter((k) => progress[k] === 'done').length;
+
+  const busy = phase !== 'idle';
+  const busyLabel =
+    phase === 'creating' ? 'Creating case…' : phase === 'uploading' ? 'Uploading…' : 'Starting pipeline…';
 
   function put(kind: DocumentKind, file: File | null) {
     setSlots((s) => {
@@ -65,8 +74,12 @@ export function NewCase() {
       const created = await api.createCase({ docs });
       setPhase('uploading');
       for (const target of created.uploads) {
+        const s = slots[target.kind];
+        // Unreachable through the UI — the shelf's clear is disabled while the
+        // pack is in flight — but a skipped document surfaces as the server's
+        // named PACK_INCOMPLETE, which is a better failure than a crash here.
+        if (!s) continue;
         setProgress((p) => ({ ...p, [target.kind]: 'pending' }));
-        const s = slots[target.kind] as Slot;
         await api.upload(target, new Blob([await s.file.arrayBuffer()], { type: s.contentType }));
         setProgress((p) => ({ ...p, [target.kind]: 'done' }));
       }
@@ -81,6 +94,8 @@ export function NewCase() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
+      <BackButton href={href({ name: 'cases' })} className="-ml-2.5 mb-2" />
+
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[18px] font-semibold tracking-tight text-text">New case</h1>
@@ -92,7 +107,8 @@ export function NewCase() {
         <button
           type="button"
           onClick={loadDemo}
-          className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-border bg-surface px-3 text-[12px] text-text-2 hover:bg-hover"
+          disabled={busy}
+          className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-border bg-surface px-3 text-[12px] text-text-2 hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           <FileJson className="size-3.5" />
           Load demo pack
@@ -101,17 +117,31 @@ export function NewCase() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {KINDS.map((kind) => (
-          <Dropzone
+          <FileUploadCard
             key={kind}
             kind={kind}
+            hint={HINT[kind]}
             slot={slots[kind] ?? null}
             required={REQUIRED_DOCUMENT_KINDS.includes(kind)}
             state={progress[kind] ?? null}
-            disabled={phase !== 'idle'}
+            disabled={busy}
             onFile={(f) => put(kind, f)}
           />
         ))}
       </div>
+
+      <FileCollectionsShelf slots={slots} onClear={() => setSlots({})} disabled={busy} />
+
+      {phase === 'uploading' && (
+        <div className="mt-4 rounded-md border border-border bg-surface p-3.5">
+          <ProgressBar
+            value={uploaded}
+            max={staged || 1}
+            label={`Sending the pack — ${uploaded} of ${staged} documents`}
+            showValue
+          />
+        </div>
+      )}
 
       <div className="mt-5 rounded-md border border-border bg-surface p-4 text-[12px] leading-relaxed text-text-2">
         <p>
@@ -129,88 +159,10 @@ export function NewCase() {
         <span className="text-[12px] text-text-3">
           {REQUIRED_DOCUMENT_KINDS.filter((k) => slots[k]).length} of {REQUIRED_DOCUMENT_KINDS.length} required documents
         </span>
-        <button
-          type="button"
-          disabled={!ready || phase !== 'idle'}
-          onClick={submit}
-          className="inline-flex h-9 items-center rounded-sm bg-brand px-4 text-[13px] font-medium text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {phase === 'idle' ? 'Reconstruct settlement' : phase === 'creating' ? 'Creating case…' : phase === 'uploading' ? 'Uploading…' : 'Starting pipeline…'}
-        </button>
+        <LoadingButton type="button" disabled={!ready || busy} loading={busy} loadingText={busyLabel} onClick={submit}>
+          Reconstruct settlement
+        </LoadingButton>
       </div>
-    </div>
-  );
-}
-
-function Dropzone({
-  kind, slot, required, state, disabled, onFile,
-}: {
-  kind: DocumentKind;
-  slot: Slot | null;
-  required: boolean;
-  state: 'pending' | 'done' | null;
-  disabled: boolean;
-  onFile: (f: File | null) => void;
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  const [over, setOver] = useState(false);
-
-  return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        const f = e.dataTransfer.files[0];
-        if (f && !disabled) onFile(f);
-      }}
-      className={cn(
-        'relative rounded-md border bg-surface p-3.5 transition-colors',
-        over ? 'border-brand bg-brand-soft' : slot ? 'border-border-strong' : 'border-dashed border-border',
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] font-medium text-text">{DOCUMENT_LABEL[kind]}</span>
-            {required && <span className="font-mono text-[10px] text-disputed">required</span>}
-          </div>
-          <p className="mt-0.5 text-[11px] leading-snug text-text-3">{HINT[kind]}</p>
-        </div>
-        {state === 'done' ? (
-          <CheckCircle2 className="size-4 shrink-0 text-brand" />
-        ) : slot ? (
-          <button type="button" onClick={() => onFile(null)} disabled={disabled} className="text-text-3 hover:text-text" aria-label="remove">
-            <X className="size-4" />
-          </button>
-        ) : null}
-      </div>
-
-      {slot ? (
-        <div className="mt-2.5 flex items-center gap-2 rounded-sm bg-canvas px-2 py-1.5 font-mono text-[11px] text-text-2">
-          <FileJson className="size-3.5 shrink-0 text-text-3" />
-          <span className="truncate">{slot.file.name}</span>
-          <span className="ml-auto shrink-0 text-text-3">{(slot.file.size / 1024).toFixed(1)} KB</span>
-        </div>
-      ) : (
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => input.current?.click()}
-          className="mt-2.5 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-sm border border-border text-[12px] text-text-2 hover:bg-hover"
-        >
-          <FileUp className="size-3.5" />
-          Drop a file or choose
-        </button>
-      )}
-      <input
-        ref={input}
-        type="file"
-        accept=".pdf,.json,.png,.jpg,.jpeg,application/pdf,application/json,image/*"
-        className="hidden"
-        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-      />
     </div>
   );
 }
@@ -219,3 +171,4 @@ function guessType(name: string): string {
   const ext = name.toLowerCase().split('.').pop();
   return ext === 'json' ? 'application/json' : ext === 'pdf' ? 'application/pdf' : ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'application/octet-stream';
 }
+

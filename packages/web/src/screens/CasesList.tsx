@@ -1,17 +1,32 @@
 import type { CaseSummary } from '@fc/contracts';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api } from '../lib/api';
+import { BrightLizardLoader } from '../components/extras/bright-lizard-loader';
+import { api, ApiError } from '../lib/api';
 import { STATUS_LABEL } from '../lib/labels';
 import { href } from '../lib/router';
 import { cn } from '../lib/utils';
 
+type LoadError = { message: string; unauthenticated: boolean };
+
 export function CasesList() {
   const [cases, setCases] = useState<CaseSummary[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<LoadError | null>(null);
 
   useEffect(() => {
-    api.listCases().then(setCases).catch((e: Error) => setError(e.message));
+    api
+      .listCases()
+      .then(setCases)
+      .catch((e: unknown) => {
+        // Stop the loader either way — a failed read is not still in flight —
+        // and separate "you are not signed in" from a real failure, because
+        // they need different words on screen.
+        setCases([]);
+        setError({
+          message: e instanceof Error ? e.message : 'Could not load your cases.',
+          unauthenticated: e instanceof ApiError && e.status === 401,
+        });
+      });
   }, []);
 
   return (
@@ -30,7 +45,9 @@ export function CasesList() {
         </a>
       </div>
 
-      {error && <p className="rounded-sm bg-disputed-soft px-3 py-2 text-[12px] text-disputed">{error}</p>}
+      {error && !error.unauthenticated && (
+        <p className="rounded-sm bg-disputed-soft px-3 py-2 text-[12px] text-disputed">{error.message}</p>
+      )}
 
       <div className="rounded-md border border-border bg-surface">
         <a href={href({ name: 'demo' })} className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 hover:bg-hover">
@@ -42,7 +59,20 @@ export function CasesList() {
         </a>
 
         {cases === null ? (
-          <div className="px-4 py-8 text-center text-[12px] text-text-3">Loading…</div>
+          <div className="flex items-center justify-center gap-2.5 px-4 py-8 text-[12px] text-text-3">
+            <BrightLizardLoader size="sm" tone="brand" />
+            Loading your cases
+          </div>
+        ) : error?.unauthenticated ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-[12px] text-text-2">Sign in to see the cases on your account.</p>
+            <a
+              href={href({ name: 'auth' })}
+              className="mt-3 inline-flex h-8 items-center rounded-sm bg-brand px-3 text-[12px] font-medium text-white hover:bg-brand/90"
+            >
+              Sign in
+            </a>
+          </div>
         ) : cases.length === 0 ? (
           <div className="px-4 py-8 text-center text-[12px] text-text-3">No cases yet. Upload a claim pack to start one.</div>
         ) : (

@@ -27,7 +27,7 @@ export function ScrambleText({
   const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    let startTime = performance.now();
+    const startTime = performance.now();
     const length = text.length;
 
     const update = (now: number) => {

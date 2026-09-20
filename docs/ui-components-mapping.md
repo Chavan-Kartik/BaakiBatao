@@ -121,7 +121,7 @@ Using `21st search`, we identified 3 matching components that strengthen the des
 
 ---
 
-### 4. Proposed Execution Sequence (Pending Your Approval)
+### 4. Execution Sequence
 
 Before touching any code, here is the exact implementation roadmap:
 
@@ -142,8 +142,103 @@ Before touching any code, here is the exact implementation roadmap:
 3. **Phase 2: Cases Hub & Execution**:
    - Upgrade `CasesList.tsx` with advanced KPI stats and project data table.
    - Upgrade `Pipeline.tsx` with live loading state, bright-lizard indicator, and scramble text.
-3. **Phase 3: Review Workspace & Verify**:
+4. **Phase 3: Review Workspace & Verify**:
    - Upgrade `CaseHeader.tsx` and `Review.tsx` with stats, waterfall chart, and PDF viewer drawer.
    - Upgrade `Verify.tsx` with verification orb and scramble hash reveals.
 5. **Testing & Verification**:
    - Run `pnpm --filter @fc/web typecheck` and `pnpm --filter @fc/web build` to ensure 0 build errors or regressions.
+
+---
+
+### 5. Phase 1 — Implemented and Verified
+
+Phase 1 (shell, auth, intake) is wired and verified against a running API (`:3000`) and dev
+server, not merely compiled.
+
+| File | Change |
+|---|---|
+| `components/Sidebar.tsx` | Avatar chip in the user card opens `AvatarPicker` in a `ui/dialog`. The choice persists in `localStorage` under `fc:avatar:<email>` — a display preference, keyed to the account, not an identity. |
+| `screens/SignIn.tsx` | Now the auth page at `#/u`: one form, `LoadingButton` on submit, show/hide password, `RegulatoryMarquee` at the bottom. The institutional layout moved to the landing page — see §6. |
+| `screens/NewCase.tsx` | Six `FileUploadCard` slots, `FileCollectionsShelf` for the staged pack, `BackButton` to `/cases`, aggregate `ProgressBar` during upload, `LoadingButton` submit. |
+| `extras/file-upload-card.tsx` | A `progress?: number` prop replaces the hard-coded `value={75}`. `FileCollectionsShelf` gained `disabled`, so "Clear all" cannot strand the upload loop with a document it can no longer read. |
+| `extras/progress-bar.tsx` | New `indeterminate` mode. An upload of unknown duration sheens instead of showing a percentage nobody measured. |
+| `index.css` | Added the missing `@keyframes shimmer` (the arbitrary `animate-[shimmer…]` class had been animating nothing) and `.direction-reverse` for the marquee's mirrored track. |
+
+#### Foundation repairs found on the way
+
+- The baseline `pnpm --filter @fc/web typecheck` was **red: 13 errors**, every one inside the
+  vendored component files and none in application code. Fixed: recharts-v3 tooltip/legend
+  payload types in `ui/chart.tsx`, `avatars[0]` under `noUncheckedIndexedAccess`,
+  `ColumnDef`/`SortingState` type-only imports under `verbatimModuleSyntax`, plus 10 eslint
+  errors (unused imports, `prefer-const`).
+- **`components/advanced-stats.tsx` was deleted.** As vendored it was a generic SaaS marketing
+  template — "Total Revenue $2.4M", "Active Subscriptions", "Churn Rate", no props, `bg-white
+  min-h-screen font-dmSans` — importing a `./charts` module that does not exist. It could not
+  compile and could not be used. The claims KPI strip this mapping asks for already exists as
+  `extras/claims-stats.tsx` → `ClaimsSummaryStats`. **Phase 2 should take its KPI row from
+  `ClaimsSummaryStats`; there is nothing in `advanced-stats` worth restoring.**
+
+#### Verification
+
+- `pnpm --filter @fc/web typecheck` → 0 errors. `eslint packages/web/src` → 0 problems.
+  `vite build` → 0 errors.
+- In the browser, against the running stack: sign-up reaches the shell; `#/new` renders with the
+  required-document gate enforced; "Load demo pack" fills the four required slots and enables
+  submit; submit created a case, uploaded four documents and landed on
+  `#/cases/<id>/pipeline`; the avatar dialog opens from the sidebar. **No page errors and no
+  console warnings.**
+
+#### Deliberate deviations from the roadmap above
+
+1. `SignInPage` from `jahed/sign-in` was **not** adopted verbatim. It ships a Google OAuth
+   button, "Keep me signed in", "Reset password", testimonial cards and a `font-geist` face,
+   none of which exist in this product — and a sign-in screen with three dead controls is worse
+   than one with none. Its institutional *layout* was adopted; every control on the page works.
+2. No self-selected **role badge**. `AvatarPicker`'s presets are labelled
+   Specialist/Analyst/Auditor/Reviewer; the role line is fixed to "Policyholder", so the UI
+   never implies adjudication authority the session does not have.
+3. The marquee's "FY2024-25 insurers disallowed ₹18,521 crore (13.98%)" is carried over from
+   the research in §1 of this document and is **unverified in-repo**. Check it against the IRDAI
+   annual report before this screen faces anyone.
+
+#### Still open
+
+- **Phase 2**: `CasesList.tsx` (`ClaimsSummaryStats`, `CasesDataTable`, `Folder`) and
+  `Pipeline.tsx` (`loading-state`, `bright-lizard-loader`, `scramble-text`).
+- **Phase 3**: `CaseHeader.tsx`/`Review.tsx` (`chart-waterfall`, `pdf-viewer`) and `Verify.tsx`
+  (verification orb, hash scramble).
+- §3's three discovered extras — policy card, insurer-vs-rulepack inline diff, status badge —
+  are still unbuilt.
+
+---
+
+### 6. Routing, the landing page, and deferred auth
+
+The front door changed after Phase 1 landed. Routes are hash-based, in `lib/router.ts`:
+
+| Path | Screen | Session |
+|---|---|---|
+| `#/` | `screens/Landing.tsx` — hero, the three assurances, the real seven-step waterfall read from `STEP_LABEL`, an honest "what it will not do", marquee | not required |
+| `#/u` | `screens/SignIn.tsx` — sign in / create account | — |
+| `#/cases` | `CasesList` | read for the list, but the page renders either way |
+| `#/cases/<id>/<tab>` | pipeline / review / verify | as above |
+| `#/new` | `NewCase` intake | as above |
+| `#/demo` | the worked example, settled in the browser | not required |
+
+**Auth is not enforced in the UI.** `App.tsx` renders every workspace route unconditionally; only
+`#/` and `#/u` stand outside the shell. The session is read for the sidebar card and for the
+requests that need it, and no route waits on `isPending`, so no page is traded for a spinner.
+When gating is wanted it belongs in the single branch in `App.tsx` that currently renders every
+route.
+
+The API still answers 401 for `/api/cases` without a session, so the UI had to stop lying about
+it:
+
+- `CasesList` tells a 401 apart from a real failure and answers it with a **Sign in** button
+  instead of printing "Unauthorized". It also clears its loader on failure — previously a failed
+  read left "Loading…" on screen forever.
+- Loading is in-context rather than a global block: the sidebar card holds a skeleton until the
+  first session read lands (so it never flashes the signed-out state), and the case list spins
+  `bright-lizard-loader`.
+
+Unknown paths — and `#/signin`, from any older link or bookmark — fall back to the landing page.
