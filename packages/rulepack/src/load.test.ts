@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadRulepackV1 } from './load';
+import { loadRulepackV1, normaliseAlias } from './load';
 
 describe('rulepack v1', () => {
   const pack = loadRulepackV1();
@@ -110,6 +110,83 @@ describe('rulepack v1', () => {
       if (cat.ameExclusionClause) {
         expect(pack.clauses[cat.ameExclusionClause]).toBeDefined();
       }
+    }
+  });
+
+  /**
+   * The implementation target is roughly sixty categories: enough that a real
+   * itemised bill resolves at tier 1 most of the time, rather than escalating
+   * every second line to a model.
+   */
+  it('carries roughly sixty categories, every one with aliases', () => {
+    const cats = Object.values(pack.categories);
+    expect(cats.length).toBeGreaterThanOrEqual(60);
+    for (const cat of cats) {
+      expect(cat.aliases.length, `${cat.categoryId} has no aliases`).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * The clause a category cites must say what the finding will use it to say.
+   * An exclusion from the AME base has to be grounded in a clause whose effect
+   * is EXCLUDE_FROM_AME; an immune category in one whose effect is
+   * IMMUNE_TO_PROPORTIONATE. Anything else is a citation that reads wrong.
+   */
+  it('grounds every AME exclusion in a clause with the matching effect', () => {
+    for (const cat of Object.values(pack.categories)) {
+      if (!cat.ameExclusionClause) continue;
+      const clause = pack.clauses[cat.ameExclusionClause];
+      expect(clause?.effect).toBe(
+        cat.proportionateImmune ? 'IMMUNE_TO_PROPORTIONATE' : 'EXCLUDE_FROM_AME',
+      );
+      expect(cat.ameEligible, `${cat.categoryId} is both eligible and excluded`).toBe(false);
+    }
+  });
+
+  it('only lets a rider buy back items that are actually on the non-payable list', () => {
+    for (const cat of Object.values(pack.categories)) {
+      if (cat.riderCanCover.length > 0) expect(cat.annexure).toBe('II');
+    }
+  });
+
+  /**
+   * AME eligibility is the set of things a room-category ratio can lawfully
+   * touch. It is professional fees, theatre, nursing and treatment procedures
+   * — never a non-payable item, and never something the circular excludes.
+   */
+  it('keeps AME eligibility to payable treatment charges', () => {
+    for (const cat of Object.values(pack.categories)) {
+      if (!cat.ameEligible) continue;
+      expect(cat.annexure, `${cat.categoryId} is AME-eligible but non-payable`).toBe('I');
+      expect(cat.ameExclusionClause).toBeNull();
+      expect(cat.proportionateImmune).toBe(false);
+    }
+  });
+
+  /**
+   * Alias uniqueness has to hold on the lookup key the lexicon actually uses,
+   * not on the spelling: "X-ray" and "x ray" normalise to the same key.
+   */
+  it('gives every category a distinct set of aliases after normalisation', () => {
+    const seen = new Map<string, string>();
+    for (const cat of Object.values(pack.categories)) {
+      for (const alias of cat.aliases) {
+        const key = normaliseAlias(alias);
+        expect(seen.get(key), `alias "${alias}" collides after normalisation`).toBeUndefined();
+        seen.set(key, cat.categoryId);
+      }
+    }
+  });
+
+  it('carries the three diagnostic sub-categories under the one diagnostics clause', () => {
+    for (const id of ['DIAGNOSTICS', 'IMAGING', 'CARDIAC_DIAGNOSTICS', 'ENDOSCOPY']) {
+      expect(pack.categories[id]?.ameExclusionClause, id).toBe('AME.EXCL.DIAG');
+    }
+  });
+
+  it('names every clause a sub-limit in the generated corpus can cite', () => {
+    for (const id of ['LIMIT.ROOM', 'LIMIT.ICU', 'LIMIT.AMBULANCE']) {
+      expect(pack.clauses[id]?.effect, id).toBe('CAP');
     }
   });
 });

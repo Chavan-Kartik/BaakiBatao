@@ -1,6 +1,5 @@
 {
-  "_comment": "Canonical line categories. Each carries its own AME eligibility and the clause that grounds it, which is what makes step 5 a table lookup rather than a pile of conditionals — and what makes every finding automatically citable. TODO(W3): expand to ~60 and attach embedding centroids at rulepack build time.",
-
+  "_comment": "Canonical line categories. Each carries its own AME eligibility and the clause that grounds it, which is what makes step 5 a table lookup rather than a pile of conditionals — and what makes every finding automatically citable. Roughly 70 categories: the payable classes a hospital bill is itemised into, plus the IRDAI non-payable list (Master Circular 2024, Annexure II) and the items its Annexures III and IV subsume into room or procedure charges — which are not separately payable, so they carry annexure II here too. Aliases are the tier-1 lexicon (§14): exact after normalisation, then trigram-fuzzy above the calibrated threshold. An alias must be unambiguous on its own; a phrase that could name two categories belongs to neither.",
   "ROOM_RENT": {
     "categoryId": "ROOM_RENT",
     "label": "Room rent / bed charges",
@@ -9,9 +8,16 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["room rent", "bed charges", "room charges", "accommodation", "bed charge"]
+    "aliases": [
+      "room rent",
+      "bed charges",
+      "room charges",
+      "accommodation",
+      "bed charge",
+      "day care bed charges",
+      "ward charges"
+    ]
   },
-
   "ICU_CHARGE": {
     "categoryId": "ICU_CHARGE",
     "label": "ICU / ITU charges",
@@ -20,11 +26,16 @@
     "proportionateImmune": true,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["icu charges", "itu", "intensive care", "icu bed", "critical care unit", "hdu"]
+    "aliases": [
+      "icu charges",
+      "itu",
+      "intensive care",
+      "icu bed",
+      "critical care unit",
+      "hdu"
+    ]
   },
-
   "_comment_PHARMACY": "Split from consumables deliberately. Circular 151/06/2020 §3(i) excludes 'pharmacy and consumables' from AME as one phrase, so both categories carry AME.EXCL.PHARMA. But they differ on the independent question of payability: prescribed drugs administered during treatment are payable, while disposables are the classic Annexure II item a consumables rider exists to buy back. One combined category would have had to pick one answer, and picking 'non-payable' would mean telling every policyholder their medicines were lawfully disallowed. Note what is NOT here: neither category claims the alias 'pharmacy & consumables'. A bill line billed as that single lump genuinely is ambiguous between a payable and a non-payable category, so it must route to UNRESOLVED / AMBIGUOUS_DESCRIPTION and be corrected against the hospital's itemisation. Giving the alias to either category would resolve the ambiguity by fiat in whichever direction we happened to choose.",
-
   "PHARMACY": {
     "categoryId": "PHARMACY",
     "label": "Pharmacy / medicines",
@@ -33,9 +44,19 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["pharmacy", "medicines", "drugs", "chemist", "medical store", "pharmacy charges"]
+    "aliases": [
+      "pharmacy",
+      "medicines",
+      "drugs",
+      "chemist",
+      "medical store",
+      "pharmacy charges",
+      "iv fluids",
+      "injections",
+      "tablets",
+      "medication"
+    ]
   },
-
   "CONSUMABLE": {
     "categoryId": "CONSUMABLE",
     "label": "Consumables and disposables",
@@ -43,17 +64,28 @@
     "ameExclusionClause": "AME.EXCL.PHARMA",
     "proportionateImmune": false,
     "annexure": "II",
-    "riderCanCover": ["CONSUMABLES_RIDER"],
+    "riderCanCover": [
+      "CONSUMABLES_RIDER"
+    ],
     "aliases": [
       "consumables",
       "disposables",
       "surgical disposables",
       "surgical consumables",
       "cotton and gauze",
-      "syringes"
+      "syringes",
+      "surgical blades",
+      "tourniquet",
+      "disposable apron",
+      "eye pad",
+      "eye shield",
+      "eye drape",
+      "crepe bandage",
+      "surgical tape",
+      "iv cannula",
+      "iv set"
     ]
   },
-
   "IMPLANT_DEVICE": {
     "categoryId": "IMPLANT_DEVICE",
     "label": "Implants and medical devices",
@@ -62,12 +94,25 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["implant", "stent", "prosthesis", "medical device", "lens", "iol", "mesh", "plate"]
+    "aliases": [
+      "implant",
+      "stent",
+      "prosthesis",
+      "medical device",
+      "lens",
+      "iol",
+      "mesh",
+      "plate",
+      "intraocular lens",
+      "pacemaker",
+      "orthopaedic implant",
+      "drug eluting stent"
+    ]
   },
-
+  "_comment_DIAGNOSTICS": "Split three ways — laboratory, imaging, cardiac — because the lexicon resolves better at that granularity, while all three carry AME.EXCL.DIAG: the circular excludes 'diagnostics' as one word and the engine treats them identically. A line billed as 'laboratory and imaging' is a lump, and is left to be categorised by a human rather than claimed by any of the three.",
   "DIAGNOSTICS": {
     "categoryId": "DIAGNOSTICS",
-    "label": "Diagnostics and investigations",
+    "label": "Laboratory and pathology investigations",
     "ameEligible": false,
     "ameExclusionClause": "AME.EXCL.DIAG",
     "proportionateImmune": false,
@@ -77,17 +122,79 @@
       "lab",
       "laboratory",
       "pathology",
-      "radiology",
       "investigation",
+      "blood test",
+      "lab charges",
+      "biochemistry",
+      "microbiology",
+      "histopathology",
+      "culture and sensitivity",
+      "cbc",
+      "lft",
+      "kft",
+      "hba1c",
+      "serology"
+    ]
+  },
+  "IMAGING": {
+    "categoryId": "IMAGING",
+    "label": "Imaging and radiology",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.DIAG",
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "radiology",
       "x-ray",
       "ct scan",
       "mri",
       "ultrasound",
-      "ecg",
-      "blood test"
+      "usg",
+      "imaging",
+      "ct angiography",
+      "mri brain",
+      "chest x ray",
+      "pet ct",
+      "doppler"
     ]
   },
-
+  "CARDIAC_DIAGNOSTICS": {
+    "categoryId": "CARDIAC_DIAGNOSTICS",
+    "label": "Cardiac investigations",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.DIAG",
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "ecg",
+      "echo",
+      "echocardiography",
+      "2d echo",
+      "tmt",
+      "holter",
+      "stress test",
+      "ekg"
+    ]
+  },
+  "ENDOSCOPY": {
+    "categoryId": "ENDOSCOPY",
+    "label": "Endoscopic investigations",
+    "ameEligible": false,
+    "ameExclusionClause": "AME.EXCL.DIAG",
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "endoscopy",
+      "colonoscopy",
+      "bronchoscopy",
+      "upper gi endoscopy",
+      "ogd scopy",
+      "cystoscopy"
+    ]
+  },
   "SURGEON_FEE": {
     "categoryId": "SURGEON_FEE",
     "label": "Surgeon's fee",
@@ -96,9 +203,16 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["surgeon fee", "surgeon charges", "operating surgeon", "surgery charges"]
+    "aliases": [
+      "surgeon fee",
+      "surgeon charges",
+      "operating surgeon",
+      "surgery charges",
+      "surgeon fees",
+      "professional fees surgeon",
+      "chief surgeon"
+    ]
   },
-
   "ANAESTHETIST_FEE": {
     "categoryId": "ANAESTHETIST_FEE",
     "label": "Anaesthetist's fee",
@@ -107,9 +221,16 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["anaesthetist", "anesthesia charges", "anaesthesia"]
+    "aliases": [
+      "anaesthetist",
+      "anesthesia charges",
+      "anaesthesia",
+      "anaesthetist fee",
+      "anesthetist charges",
+      "anaesthetist charges",
+      "anaesthesia fees"
+    ]
   },
-
   "OT_CHARGE": {
     "categoryId": "OT_CHARGE",
     "label": "Operation theatre charges",
@@ -118,9 +239,17 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["ot charges", "operation theatre", "theatre charges", "ot"]
+    "aliases": [
+      "ot charges",
+      "operation theatre",
+      "theatre charges",
+      "ot",
+      "operation theater",
+      "ot rent",
+      "minor ot charges",
+      "cath lab charges"
+    ]
   },
-
   "NURSING_CHARGE": {
     "categoryId": "NURSING_CHARGE",
     "label": "Nursing charges",
@@ -129,9 +258,14 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["nursing", "nursing charges", "nursing care"]
+    "aliases": [
+      "nursing",
+      "nursing charges",
+      "nursing care",
+      "nursing fee",
+      "nursing services"
+    ]
   },
-
   "DOCTOR_VISIT": {
     "categoryId": "DOCTOR_VISIT",
     "label": "Doctor visit / consultation",
@@ -145,10 +279,14 @@
       "consultation",
       "visiting consultant",
       "physician charges",
-      "rmo charges"
+      "rmo charges",
+      "doctor visit charges",
+      "consultant visit",
+      "specialist consultation",
+      "duty doctor charges",
+      "physician visit"
     ]
   },
-
   "PHYSIOTHERAPY": {
     "categoryId": "PHYSIOTHERAPY",
     "label": "Physiotherapy",
@@ -157,9 +295,12 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["physiotherapy", "physio", "rehabilitation"]
+    "aliases": [
+      "physiotherapy",
+      "physio",
+      "rehabilitation"
+    ]
   },
-
   "OXYGEN": {
     "categoryId": "OXYGEN",
     "label": "Oxygen charges",
@@ -168,9 +309,14 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["oxygen", "o2 charges", "oxygen cylinder"]
+    "aliases": [
+      "oxygen",
+      "o2 charges",
+      "oxygen cylinder",
+      "oxygen charges",
+      "oxygen therapy"
+    ]
   },
-
   "BLOOD_PRODUCT": {
     "categoryId": "BLOOD_PRODUCT",
     "label": "Blood and blood products",
@@ -179,9 +325,14 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["blood", "blood transfusion", "prbc", "plasma", "platelets"]
+    "aliases": [
+      "blood",
+      "blood transfusion",
+      "prbc",
+      "plasma",
+      "platelets"
+    ]
   },
-
   "AMBULANCE": {
     "categoryId": "AMBULANCE",
     "label": "Ambulance charges",
@@ -190,9 +341,217 @@
     "proportionateImmune": false,
     "annexure": "I",
     "riderCanCover": [],
-    "aliases": ["ambulance", "ambulance charges", "patient transport"]
+    "aliases": [
+      "ambulance",
+      "ambulance charges",
+      "patient transport"
+    ]
   },
-
+  "ASSISTANT_SURGEON_FEE": {
+    "categoryId": "ASSISTANT_SURGEON_FEE",
+    "label": "Assistant surgeon's fee",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "assistant surgeon",
+      "asst surgeon fee",
+      "surgical assistant",
+      "assistant surgeon charges"
+    ]
+  },
+  "PROCEDURE_CHARGE": {
+    "categoryId": "PROCEDURE_CHARGE",
+    "label": "Procedure charges",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "procedure charges",
+      "minor procedure",
+      "suturing charges",
+      "catheterization",
+      "catheterisation",
+      "ryles tube insertion",
+      "lumbar puncture",
+      "central line insertion"
+    ]
+  },
+  "DRESSING_CHARGE": {
+    "categoryId": "DRESSING_CHARGE",
+    "label": "Dressing charges",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "dressing charges",
+      "wound dressing",
+      "dressing"
+    ]
+  },
+  "DIALYSIS": {
+    "categoryId": "DIALYSIS",
+    "label": "Dialysis",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "dialysis",
+      "haemodialysis",
+      "hemodialysis",
+      "dialysis charges",
+      "crrt"
+    ]
+  },
+  "CHEMOTHERAPY": {
+    "categoryId": "CHEMOTHERAPY",
+    "label": "Chemotherapy administration",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "chemotherapy",
+      "chemo administration",
+      "day care chemotherapy",
+      "chemo port charges"
+    ]
+  },
+  "RADIOTHERAPY": {
+    "categoryId": "RADIOTHERAPY",
+    "label": "Radiotherapy",
+    "ameEligible": true,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "radiotherapy",
+      "radiation therapy",
+      "imrt",
+      "brachytherapy"
+    ]
+  },
+  "_comment_VENTILATOR": "Ventilator support only happens in an intensive-care setting, so a proportionate deduction on it fails for the same reason it fails on ICU charges: there is no room category to key the ratio on. It carries PD.ICU rather than a clause of its own.",
+  "VENTILATOR": {
+    "categoryId": "VENTILATOR",
+    "label": "Ventilator support",
+    "ameEligible": false,
+    "ameExclusionClause": "PD.ICU",
+    "proportionateImmune": true,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "ventilator",
+      "ventilator charges",
+      "mechanical ventilation",
+      "bipap",
+      "cpap charges"
+    ]
+  },
+  "EQUIPMENT_CHARGE": {
+    "categoryId": "EQUIPMENT_CHARGE",
+    "label": "Medical equipment usage",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "infusion pump",
+      "syringe pump",
+      "cardiac monitor",
+      "dvt pump",
+      "monitor charges",
+      "equipment charges",
+      "nebulization charges"
+    ]
+  },
+  "EMERGENCY_CHARGE": {
+    "categoryId": "EMERGENCY_CHARGE",
+    "label": "Emergency and casualty charges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "casualty charges",
+      "emergency room charges",
+      "er charges",
+      "emergency charges",
+      "triage charges"
+    ]
+  },
+  "BLOOD_BANK_CHARGE": {
+    "categoryId": "BLOOD_BANK_CHARGE",
+    "label": "Blood bank processing",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "blood bank charges",
+      "blood processing charges",
+      "transfusion charges",
+      "blood bank"
+    ]
+  },
+  "PATIENT_DIET": {
+    "categoryId": "PATIENT_DIET",
+    "label": "Patient's diet",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "patient diet",
+      "dietician charges",
+      "therapeutic diet",
+      "patient food"
+    ]
+  },
+  "PRE_HOSPITALISATION": {
+    "categoryId": "PRE_HOSPITALISATION",
+    "label": "Pre-hospitalisation expenses",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "pre hospitalisation",
+      "pre hospitalization",
+      "pre admission investigations",
+      "pre op evaluation"
+    ]
+  },
+  "POST_HOSPITALISATION": {
+    "categoryId": "POST_HOSPITALISATION",
+    "label": "Post-hospitalisation expenses",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "I",
+    "riderCanCover": [],
+    "aliases": [
+      "post hospitalisation",
+      "post hospitalization",
+      "follow up consultation",
+      "post discharge review"
+    ]
+  },
   "REGISTRATION_FEE": {
     "categoryId": "REGISTRATION_FEE",
     "label": "Registration and admission fee",
@@ -201,9 +560,14 @@
     "proportionateImmune": false,
     "annexure": "II",
     "riderCanCover": [],
-    "aliases": ["registration", "registration fee", "admission charges", "file charges"]
+    "aliases": [
+      "registration",
+      "registration fee",
+      "admission charges",
+      "admission fee",
+      "ip registration"
+    ]
   },
-
   "ADMIN_CHARGE": {
     "categoryId": "ADMIN_CHARGE",
     "label": "Administrative and service charges",
@@ -216,10 +580,13 @@
       "administrative charges",
       "service charges",
       "medical records charges",
-      "documentation charges"
+      "documentation charges",
+      "admin charges",
+      "photocopy charges",
+      "file charges",
+      "medical records"
     ]
   },
-
   "FOOD_BEVERAGE": {
     "categoryId": "FOOD_BEVERAGE",
     "label": "Food and beverages (other than patient diet)",
@@ -228,9 +595,16 @@
     "proportionateImmune": false,
     "annexure": "II",
     "riderCanCover": [],
-    "aliases": ["food", "beverage", "attendant food", "canteen", "diet charges"]
+    "aliases": [
+      "food",
+      "beverage",
+      "attendant food",
+      "canteen",
+      "cafeteria",
+      "snacks",
+      "tea and coffee"
+    ]
   },
-
   "TOILETRIES": {
     "categoryId": "TOILETRIES",
     "label": "Toiletries and personal comfort items",
@@ -238,10 +612,22 @@
     "ameExclusionClause": null,
     "proportionateImmune": false,
     "annexure": "II",
-    "riderCanCover": ["CONSUMABLES_RIDER"],
-    "aliases": ["toiletries", "soap", "toothpaste", "comfort items", "sanitary"]
+    "riderCanCover": [
+      "CONSUMABLES_RIDER"
+    ],
+    "aliases": [
+      "toiletries",
+      "soap",
+      "toothpaste",
+      "comfort items",
+      "sanitary",
+      "sanitary pad",
+      "sanitary napkin",
+      "tissue paper",
+      "tissues",
+      "shampoo"
+    ]
   },
-
   "PPE_KIT": {
     "categoryId": "PPE_KIT",
     "label": "PPE kits, gloves and masks",
@@ -249,7 +635,592 @@
     "ameExclusionClause": null,
     "proportionateImmune": false,
     "annexure": "II",
-    "riderCanCover": ["CONSUMABLES_RIDER"],
-    "aliases": ["ppe kit", "gloves", "mask", "face mask", "sanitizer", "ppe charges"]
+    "riderCanCover": [
+      "CONSUMABLES_RIDER"
+    ],
+    "aliases": [
+      "ppe kit",
+      "gloves",
+      "mask",
+      "face mask",
+      "sanitizer",
+      "ppe charges"
+    ]
+  },
+  "_comment_SUBSUMED": "From here to the end of the file: the IRDAI non-payable list and the items Annexures III and IV subsume into room or procedure charges. Every one is annexure II — not separately payable — and the consumables rider buys back only the ones that are genuinely consumables. Aliases follow the circular's own wording, because that is how hospitals print them.",
+  "INJECTION_CHARGE": {
+    "categoryId": "INJECTION_CHARGE",
+    "label": "IM/IV injection charges (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "iv injection charges",
+      "im injection charges",
+      "injection administration",
+      "injection charges"
+    ]
+  },
+  "LAUNDRY": {
+    "categoryId": "LAUNDRY",
+    "label": "Laundry",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "laundry",
+      "laundry charges",
+      "linen washing"
+    ]
+  },
+  "TELEPHONE_INTERNET": {
+    "categoryId": "TELEPHONE_INTERNET",
+    "label": "Telephone, internet and email",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "telephone charges",
+      "internet charges",
+      "email charges",
+      "wifi charges",
+      "phone charges"
+    ]
+  },
+  "TELEVISION": {
+    "categoryId": "TELEVISION",
+    "label": "Television",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "television charges",
+      "tv charges",
+      "television"
+    ]
+  },
+  "ATTENDANT_CHARGE": {
+    "categoryId": "ATTENDANT_CHARGE",
+    "label": "Attendant charges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "attendant charges",
+      "attendant pass",
+      "visitor pass",
+      "attendant bed"
+    ]
+  },
+  "GUEST_SERVICE": {
+    "categoryId": "GUEST_SERVICE",
+    "label": "Guest services",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "guest services",
+      "guest room",
+      "guest charges"
+    ]
+  },
+  "CERTIFICATE_CHARGE": {
+    "categoryId": "CERTIFICATE_CHARGE",
+    "label": "Certificates",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "medical certificate",
+      "birth certificate",
+      "certificate charges",
+      "fitness certificate",
+      "death certificate"
+    ]
+  },
+  "COURIER_CONVEYANCE": {
+    "categoryId": "COURIER_CONVEYANCE",
+    "label": "Courier and conveyance",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "courier charges",
+      "conveyance charges",
+      "postage",
+      "courier"
+    ]
+  },
+  "MORTUARY": {
+    "categoryId": "MORTUARY",
+    "label": "Mortuary charges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "mortuary charges",
+      "morgue charges",
+      "mortuary"
+    ]
+  },
+  "WALKING_AID": {
+    "categoryId": "WALKING_AID",
+    "label": "Walking aids",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "walker",
+      "crutches",
+      "walking stick",
+      "wheelchair charges",
+      "walking aid"
+    ]
+  },
+  "ORTHOSIS_SUPPORT": {
+    "categoryId": "ORTHOSIS_SUPPORT",
+    "label": "Belts, braces, collars and splints",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "cervical collar",
+      "lumbar belt",
+      "lumbo sacral belt",
+      "knee brace",
+      "abdominal binder",
+      "arm sling",
+      "splint",
+      "knee immobilizer",
+      "knee immobiliser",
+      "ambulance collar",
+      "pelvic traction belt"
+    ]
+  },
+  "HOME_MEDICAL_DEVICE": {
+    "categoryId": "HOME_MEDICAL_DEVICE",
+    "label": "Take-home medical devices",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "thermometer",
+      "spirometer",
+      "nebulizer kit",
+      "nebuliser kit",
+      "steam inhaler",
+      "glucometer",
+      "bp apparatus",
+      "spacer"
+    ]
+  },
+  "PRIVATE_NURSE": {
+    "categoryId": "PRIVATE_NURSE",
+    "label": "Private nursing",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "private nurse",
+      "special nursing",
+      "private nursing charges",
+      "personal attendant nurse"
+    ]
+  },
+  "COSMETIC_ITEM": {
+    "categoryId": "COSMETIC_ITEM",
+    "label": "Cosmetic creams, powders and lotions",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "cosmetic cream",
+      "talcum powder",
+      "body lotion",
+      "moisturiser",
+      "cosmetics"
+    ]
+  },
+  "HOUSEKEEPING_HVAC": {
+    "categoryId": "HOUSEKEEPING_HVAC",
+    "label": "Housekeeping and air-conditioning (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "housekeeping",
+      "hvac charges",
+      "air conditioning charges",
+      "ac charges",
+      "housekeeping charges"
+    ]
+  },
+  "ADMISSION_KIT": {
+    "categoryId": "ADMISSION_KIT",
+    "label": "Admission kit (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "admission kit",
+      "welcome kit",
+      "patient kit",
+      "admission pack"
+    ]
+  },
+  "LINEN_BEDDING": {
+    "categoryId": "LINEN_BEDDING",
+    "label": "Linen and bedding (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "bed sheet",
+      "blanket",
+      "pillow",
+      "linen charges",
+      "bedding charges"
+    ]
+  },
+  "ID_BAND": {
+    "categoryId": "ID_BAND",
+    "label": "Patient identification band (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "patient identification band",
+      "id band",
+      "wrist band",
+      "identification band"
+    ]
+  },
+  "PULSE_OXIMETER": {
+    "categoryId": "PULSE_OXIMETER",
+    "label": "Pulse oximeter charges (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "pulse oximeter charges",
+      "spo2 monitoring charges",
+      "pulse oximetry"
+    ]
+  },
+  "DISCHARGE_PROCESSING": {
+    "categoryId": "DISCHARGE_PROCESSING",
+    "label": "Discharge procedure charges (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "discharge procedure charges",
+      "discharge processing",
+      "discharge charges"
+    ]
+  },
+  "DAILY_CHART": {
+    "categoryId": "DAILY_CHART",
+    "label": "Daily and diabetic chart charges (subsumed into room)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "daily chart charges",
+      "diabetic chart charges",
+      "tpr chart",
+      "chart charges"
+    ]
+  },
+  "THEATRE_BOOKING": {
+    "categoryId": "THEATRE_BOOKING",
+    "label": "Ward and theatre booking (subsumed into procedure)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "ot booking charges",
+      "ward booking charges",
+      "theatre booking",
+      "booking charges"
+    ]
+  },
+  "EQUIPMENT_COVER": {
+    "categoryId": "EQUIPMENT_COVER",
+    "label": "Equipment covers (subsumed into procedure)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "camera cover",
+      "microscope cover",
+      "equipment cover",
+      "probe cover"
+    ]
+  },
+  "MEDIA_FILM": {
+    "categoryId": "MEDIA_FILM",
+    "label": "X-ray film, CD and DVD charges (subsumed into procedure)",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "x ray film",
+      "xray film charges",
+      "cd charges",
+      "dvd charges",
+      "film charges"
+    ]
+  },
+  "DIABETIC_FOOTWEAR": {
+    "categoryId": "DIABETIC_FOOTWEAR",
+    "label": "Diabetic footwear",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "diabetic footwear",
+      "orthopaedic shoes",
+      "diabetic shoes"
+    ]
+  },
+  "AIR_MATTRESS": {
+    "categoryId": "AIR_MATTRESS",
+    "label": "Air and water mattresses",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "nimbus bed",
+      "air mattress",
+      "alpha bed",
+      "water bed",
+      "air bed"
+    ]
+  },
+  "URINE_COLLECTION_ITEMS": {
+    "categoryId": "URINE_COLLECTION_ITEMS",
+    "label": "Kidney tray, urine jug and bed pan",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "kidney tray",
+      "urine jug",
+      "urometer",
+      "bed pan",
+      "urine pot",
+      "urine bag"
+    ]
+  },
+  "DONOR_SCREENING": {
+    "categoryId": "DONOR_SCREENING",
+    "label": "Blood grouping and cross-matching of donor samples",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "donor screening",
+      "cross matching of donor samples",
+      "donor blood grouping",
+      "donor charges"
+    ]
+  },
+  "ECG_ELECTRODES": {
+    "categoryId": "ECG_ELECTRODES",
+    "label": "ECG electrodes",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [
+      "CONSUMABLES_RIDER"
+    ],
+    "aliases": [
+      "ecg electrodes",
+      "electrodes",
+      "ecg leads"
+    ]
+  },
+  "SUGAR_FREE_TABLETS": {
+    "categoryId": "SUGAR_FREE_TABLETS",
+    "label": "Sugar-free tablets",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "sugar free tablets",
+      "sugar free",
+      "sweetener"
+    ]
+  },
+  "BABY_CARE_ITEMS": {
+    "categoryId": "BABY_CARE_ITEMS",
+    "label": "Baby food, utilities and diapers",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [
+      "CONSUMABLES_RIDER"
+    ],
+    "aliases": [
+      "baby food",
+      "baby utilities",
+      "baby charges",
+      "diapers",
+      "diaper",
+      "nappies"
+    ]
+  },
+  "SURCHARGE": {
+    "categoryId": "SURCHARGE",
+    "label": "Surcharges",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "surcharge",
+      "peak hour surcharge",
+      "night surcharge",
+      "service surcharge"
+    ]
+  },
+  "BEAUTY_SERVICE": {
+    "categoryId": "BEAUTY_SERVICE",
+    "label": "Beauty services",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "beauty services",
+      "hair cut",
+      "barber",
+      "salon charges",
+      "beauty parlour"
+    ]
+  },
+  "CARRY_BAG": {
+    "categoryId": "CARRY_BAG",
+    "label": "Carry bags",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "carry bag",
+      "carry bags",
+      "plastic bag"
+    ]
+  },
+  "MINERAL_WATER": {
+    "categoryId": "MINERAL_WATER",
+    "label": "Mineral water",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "mineral water",
+      "water bottle",
+      "packaged water",
+      "bottled water"
+    ]
+  },
+  "PERSONAL_WEAR": {
+    "categoryId": "PERSONAL_WEAR",
+    "label": "Slippers, leggings and personal wear",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "slippers",
+      "leggings",
+      "eyelet collar",
+      "patient gown purchase",
+      "socks"
+    ]
+  },
+  "HOT_COLD_PACK": {
+    "categoryId": "HOT_COLD_PACK",
+    "label": "Hot and cold packs",
+    "ameEligible": false,
+    "ameExclusionClause": null,
+    "proportionateImmune": false,
+    "annexure": "II",
+    "riderCanCover": [],
+    "aliases": [
+      "cold pack",
+      "hot pack",
+      "ice pack",
+      "hot water bag",
+      "ice bag"
+    ]
   }
 }

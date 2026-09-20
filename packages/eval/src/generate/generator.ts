@@ -12,7 +12,7 @@ import type { GeneratedPack, Settlement } from '../types';
 import { sampleBillLines } from './bill';
 import { sampleAdmission, samplePolicy } from './policy';
 import { rngFromSeed } from './rng';
-import { settle, sheetFor } from './settle';
+import { settle, sheetFor, type SettleResult } from './settle';
 
 const pack = loadRulepackV1();
 
@@ -25,8 +25,8 @@ const pack = loadRulepackV1();
 export function generatePack(seed: number): GeneratedPack {
   const rng = rngFromSeed(seed);
   const policy = samplePolicy(rng);
-  const admission = sampleAdmission(rng, policy);
-  const sampled = sampleBillLines(rng, policy, admission);
+  const { facts: admission, archetype } = sampleAdmission(rng, policy);
+  const sampled = sampleBillLines(rng, policy, admission, archetype);
 
   const billDoc = `eval-bill-${seed}` as DocId;
   const sheetDoc = `eval-sheet-${seed}` as DocId;
@@ -54,19 +54,15 @@ export function generatePack(seed: number): GeneratedPack {
     },
   }));
 
-  const withPd = settle(policy, admission, sampled, true);
-  const withoutPd = settle(policy, admission, sampled, false);
+  const asSettlement = (r: SettleResult): Settlement => ({
+    deductionTable: sheetFor(sheetDoc, sampled, r),
+    actualPaid: r.paid,
+    paidPerLine: r.paidPerLine,
+    lawfulPdPerLine: r.lawfulPdPerLine,
+  });
 
-  const settlementWithPd: Settlement = {
-    deductionTable: sheetFor(sheetDoc, sampled, withPd),
-    actualPaid: withPd.paid,
-    paidPerLine: withPd.paidPerLine,
-  };
-  const settlementWithoutPd: Settlement = {
-    deductionTable: sheetFor(sheetDoc, sampled, withoutPd),
-    actualPaid: withoutPd.paid,
-    paidPerLine: withoutPd.paidPerLine,
-  };
+  const settlementWithPd = asSettlement(settle(policy, admission, sampled, true));
+  const settlementWithoutPd = asSettlement(settle(policy, admission, sampled, false));
 
   const billTable: ExtractedTable = {
     docId: billDoc,
@@ -99,9 +95,11 @@ export function generatePack(seed: number): GeneratedPack {
   return {
     seed,
     caseId,
+    archetype,
     policy,
     admission,
     billTable,
+    trueCategories: sampled.map((l) => l.category),
     lawfulDeductionTable: settlementWithPd.deductionTable,
     lawfulPaid: settlementWithPd.actualPaid,
     billTotal,

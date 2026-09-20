@@ -23,6 +23,7 @@
     "eval:assert": "pnpm --filter @fc/eval exec tsx src/cli.ts assert",
     "eval:baseline": "pnpm --filter @fc/eval exec tsx src/cli.ts baseline",
     "eval:calibrate": "pnpm --filter @fc/eval exec tsx src/cli.ts calibrate",
+    "eval:doc": "pnpm --filter @fc/eval exec tsx src/cli.ts doc",
     "web:dev": "pnpm --filter @fc/web dev",
     "web:build": "pnpm --filter @fc/web build",
     "cdk": "pnpm --filter @fc/infra exec cdk",

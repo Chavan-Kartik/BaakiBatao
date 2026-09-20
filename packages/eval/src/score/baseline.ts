@@ -1,4 +1,4 @@
-import type { EvalSummary, PerClauseScore } from '../types';
+import type { ControlKind, EvalSummary, PerClauseScore, Profile } from '../types';
 
 /**
  * The detection-rate baseline the regression gate compares against (§24).
@@ -10,22 +10,27 @@ import type { EvalSummary, PerClauseScore } from '../types';
  * disputing a lawful deduction, the build says so.
  */
 export interface Baseline {
+  readonly profile: Profile;
   readonly packs: number;
   readonly faults: number;
   readonly detected: number;
   readonly controlPassRate: number;
   readonly controlFalsePositiveRate: number;
   readonly perClause: readonly PerClauseScore[];
+  /** Zero-fault packs that demonstrated each lawful deduction. */
+  readonly controlCoverage: Readonly<Record<ControlKind, number>>;
   readonly generatedAt: string;
 }
 
 export const toBaseline = (summary: EvalSummary, generatedAt: string): Baseline => ({
+  profile: summary.profile,
   packs: summary.packs,
   faults: summary.faults,
   detected: summary.detected,
   controlPassRate: summary.controlPassRate,
   controlFalsePositiveRate: summary.controlFalsePositiveRate,
   perClause: summary.perClause,
+  controlCoverage: summary.controlCoverage,
   generatedAt,
 });
 
@@ -86,6 +91,19 @@ export function compareToBaseline(baseline: Baseline, summary: EvalSummary): str
     if (is.fp > 0 && !baseline.perClause.some((was) => was.clauseId === is.clauseId)) {
       failures.push(
         `new false positives under ${is.clauseId} (fp=${is.fp}), which no baseline pack disputed`,
+      );
+    }
+  }
+
+  // The control set is only evidence while it contains the deductions it
+  // claims to. A lawful cut that stops appearing in any zero-fault pack has
+  // silently left the measured set, and a 0% false-positive rate over a set
+  // that no longer contains co-pay says nothing about co-pay.
+  for (const [control, was] of Object.entries(baseline.controlCoverage ?? {})) {
+    const is = summary.controlCoverage[control as ControlKind] ?? 0;
+    if (was > 0 && is === 0) {
+      failures.push(
+        `control ${control} is no longer demonstrated by any zero-fault pack (baseline ${was} packs)`,
       );
     }
   }

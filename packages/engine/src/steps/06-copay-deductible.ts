@@ -109,7 +109,7 @@ function copay(running: Paise, ctx: Parameters<Reducer>[1]): Applied | null {
   if (percent === null || percent <= 0) return null;
 
   const base = maxPaise(ZERO, running);
-  const magnitude = percentOf(base, percent);
+  const magnitude = percentOf(base, percent, ctx.rulepack.rounding.mode);
   if (magnitude <= 0) return null;
 
   return {

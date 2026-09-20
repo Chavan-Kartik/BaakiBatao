@@ -13,7 +13,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
 
       - uses: actions/setup-node@v4
         with:
@@ -56,10 +56,13 @@ jobs:
           CDK_DISABLE_CLI_TELEMETRY: '1'
       # The domain-correctness gate. `eval:assert` regenerates 200 seeded claim
       # packs, injects 0–3 known faults into each, settles them through the real
-      # engine, and fails the build if detection precision or recall regresses
-      # against packages/eval/baseline.json — or if a lawful deduction starts
-      # being disputed. Every number is against a generated corpus with injected
-      # faults, never a claim about real-world accuracy
-      # (fixtures/corpus/PROVENANCE.md).
+      # engine under two profiles — clean rows, and rows degraded the way OCR
+      # degrades them and categorised by the real tier-1 normaliser — and fails
+      # the build if detection precision or recall regresses against
+      # packages/eval/baseline.json or baseline.degraded.json, if a lawful
+      # deduction starts being disputed, or if a lawful control drops out of
+      # the measured set. Every number is against a generated corpus with
+      # injected faults, never a claim about real-world accuracy
+      # (fixtures/corpus/PROVENANCE.md, docs/evaluation.md).
       - name: Evaluation regression gate
         run: pnpm eval:assert

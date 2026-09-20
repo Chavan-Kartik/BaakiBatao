@@ -13,6 +13,8 @@ export type { ReconstructOptions } from './interpreter';
 export { balanceLedger, sumByBucket } from './reconcile/invariant';
 export { applyRatio, survivingShare, percentOf } from './money';
 export { resolveReducer } from './registry';
+export { matchDeductionSheet, normaliseDescription, classifyReasonCode } from './insurer';
+export type { InsurerView, InsurerByLine, InsurerLineOutcome, ClaimLevelCut } from './insurer';
 export type { Reducer } from './types';
 export type { LineState, WaterfallState, ReducerContext } from './state';
 export { sumAllowed, sumClaimed, reduceLine, emptyState } from './state';

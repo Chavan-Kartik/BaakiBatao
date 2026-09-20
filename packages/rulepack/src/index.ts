@@ -1,4 +1,4 @@
-export { loadRulepackV1 } from './load';
+export { loadRulepackV1, normaliseAlias } from './load';
 export {
   StepsFile,
   ClausesFile,

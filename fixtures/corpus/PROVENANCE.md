@@ -24,23 +24,23 @@ The generation pipeline is:
 ## Status
 
 Steps 1–4 above are implemented, in `packages/eval`, and run locally with no AWS
-credentials:
+credentials. Steps 5–6 have a data-level stand-in; the render path itself does not exist.
 
 | Step | Where | State |
 |---|---|---|
-| 1 sample policy | `src/generate/policy.ts` | done — sum insured, room/ICU caps, co-pay, deductible, rider ~30% of the time |
-| 2 sample bill | `src/generate/bill.ts` | done — canonical categories; the room rate is what creates a proportionate ratio, and ICU is sampled inside its cap so a PD fault on it reaches step 5 rather than step 4 |
-| 3 settle it lawfully | `src/generate/settle.ts` | done — steps 3–6 of the waterfall, as data, so ground truth is exact by construction. Two settlements are produced, with and without the differential-billing gate, so a fault that flips an admission fact can still be injected into a sheet that is lawful under the facts the engine will see |
-| 4 inject faults | `src/faults/` | done — six unlawful operators with a known clause and amount, plus the zero-fault control set |
-| 5 render and degrade | — | **not implemented.** Rendering to HTML/CSS, rasterising, rotating, noising and the PDFs still have to be built, and they are what make the extraction layer real rather than assumed |
-| 6 assemble PDFs | — | **not implemented**, for the same reason |
+| 1 sample policy | `src/generate/policy.ts` | done — sum insured, room/ICU caps, co-pay, deductible, an ambulance sub-limit ~40% of the time, a rider ~30% of the time |
+| 2 sample bill | `src/generate/bill.ts` | done — four admission archetypes (medical, day-care surgery, major surgery, critical care) with correlated line structure: no implant without a surgeon and a theatre, no ventilator outside intensive care, per-day pharmacy and visits scaling with the stay. Descriptions are mostly lexicon aliases, sometimes an alias with a day or count appended, sometimes free text no lexicon will match. ICU and ambulance are billed above their caps some of the time on purpose, as lawful controls |
+| 3 settle it lawfully | `src/generate/settle.ts` | done — steps 3–6 of the waterfall, using the engine's own `survivingShare`/`applyRatio` with the rulepack's rounding mode, so the lawful proportionate figure per line is the engine's figure, not an approximation of it. Two settlements are produced, with and without the differential-billing gate |
+| 4 inject faults | `src/faults/` | done — six unlawful operators with a known clause and amount. Over-recovery injects beyond a *computed* bound and refuses to run if the lawful sheet disagrees with it; operators skip lines that already carry a cut of another kind; controls are derived from what each zero-fault pack actually contains |
+| 5 render and degrade | `src/generate/degrade.ts` | **data-level stand-in.** The `degraded` profile misreads descriptions and digits with OCR-typical confusions, drops sheet rows, and assigns categories through the real tier-1 normaliser (`@fc/normalise`) — so the normalisation gate, the sheet matcher and low-confidence routing are inside the measured loop. What it cannot produce is a layout failure (a merged cell, a page break through a table); only rendering can |
+| 6 assemble PDFs | — | **not implemented.** HTML/CSS layouts, rasterising, rotation and noise, and the PDFs are what turn the stand-in into a measurement of Textract |
 
-Because steps 5–6 are outstanding, there is no `fixtures/corpus/` content in git yet
-and the `.gitignore` rules for it are ahead of the code. Until they land, the
-detection numbers in `packages/eval/baseline.json` measure the engine against
-**perfectly extracted** rows: they prove the waterfall attributes known unlawful
-rupees to the right clauses, and they say nothing yet about OCR confidence,
-low-confidence routing or human correction.
+Because step 6 is outstanding, there is no `fixtures/corpus/` content in git yet and the
+`.gitignore` rules for it are ahead of the code. The numbers in `packages/eval/baseline.json`
+measure the engine against **perfectly extracted** rows; the numbers in
+`packages/eval/baseline.degraded.json` measure the engine, the tier-1 normaliser and the sheet
+matcher together against rows degraded by our own noise model. Both, with the calibration
+curve for the normaliser's threshold, are written out to `docs/evaluation.md`.
 
 ## Why the degradation step exists
 
@@ -60,7 +60,8 @@ thing. The degradation is what makes those code paths real.
   the harder and more important half. Anyone can build something that flags deductions;
   proving we do *not* flag a lawful cut is what distinguishes a reconstructor from a
   blanket classifier;
-- calibration of the normalisation threshold τ against a held-out labelled split;
+- calibration of the tier-1 fuzzy threshold against a held-out labelled split (done — the
+  embedding-margin τ of tier 2 waits on Titan);
 - paise-level attribution error, and the composition of the unresolved bucket by reason.
 
 **It cannot support** a claim about real-world accuracy. It measures whether the engine

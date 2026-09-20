@@ -133,6 +133,18 @@
     "citationUrl": null
   },
 
+  "LIMIT.AMBULANCE": {
+    "clauseId": "LIMIT.AMBULANCE",
+    "source": "POLICY_WORDING",
+    "sourceDate": null,
+    "paragraph": null,
+    "text": "Ambulance charges are payable up to the per-claim limit stated in the policy schedule.",
+    "effect": "CAP",
+    "appliesFrom": null,
+    "appliesToExistingOnRenewalFrom": null,
+    "citationUrl": null
+  },
+
   "LIMIT.ICU": {
     "clauseId": "LIMIT.ICU",
     "source": "POLICY_WORDING",

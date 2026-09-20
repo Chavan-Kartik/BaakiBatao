@@ -14,6 +14,7 @@
     "@fc/contracts": "workspace:*",
     "@fc/engine": "workspace:*",
     "@fc/fixtures": "workspace:*",
+    "@fc/normalise": "workspace:*",
     "@fc/rulepack": "workspace:*",
     "seedrandom": "^3.0.5"
   },

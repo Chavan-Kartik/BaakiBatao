@@ -53,5 +53,8 @@ export const survivingShare = (
   return { numerator: eligibleRoomRentCap, denominator: actualRoomRentPerDay };
 };
 
-export const percentOf = (amount: Paise, percent: number): Paise =>
-  applyRatio(amount, percent, 100);
+export const percentOf = (
+  amount: Paise,
+  percent: number,
+  mode: RoundingMode = 'ROUND_HALF_UP',
+): Paise => applyRatio(amount, percent, 100, mode);

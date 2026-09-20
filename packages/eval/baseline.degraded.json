@@ -1,58 +1,58 @@
 {
-  "profile": "clean",
+  "profile": "degraded",
   "packs": 200,
   "faults": 178,
-  "detected": 178,
+  "detected": 63,
   "controlPassRate": 1,
   "controlFalsePositiveRate": 0,
   "perClause": [
     {
       "clauseId": "AME.EXCL.DIAG",
-      "tp": 37,
+      "tp": 15,
       "fp": 0,
-      "fn": 0,
+      "fn": 22,
       "precision": 1,
-      "recall": 1
+      "recall": 0.40540540540540543
     },
     {
       "clauseId": "AME.EXCL.IMPLANT",
-      "tp": 7,
+      "tp": 3,
       "fp": 0,
-      "fn": 0,
+      "fn": 4,
       "precision": 1,
-      "recall": 1
+      "recall": 0.42857142857142855
     },
     {
       "clauseId": "AME.EXCL.PHARMA",
-      "tp": 34,
+      "tp": 8,
       "fp": 0,
-      "fn": 0,
+      "fn": 26,
       "precision": 1,
-      "recall": 1
+      "recall": 0.23529411764705882
     },
     {
       "clauseId": "PD.DIFFBILL",
-      "tp": 55,
+      "tp": 16,
       "fp": 0,
-      "fn": 0,
+      "fn": 39,
       "precision": 1,
-      "recall": 1
+      "recall": 0.2909090909090909
     },
     {
       "clauseId": "PD.ICU",
-      "tp": 8,
+      "tp": 4,
       "fp": 0,
-      "fn": 0,
+      "fn": 4,
       "precision": 1,
-      "recall": 1
+      "recall": 0.5
     },
     {
       "clauseId": "PD.LIMIT",
-      "tp": 37,
+      "tp": 17,
       "fp": 0,
-      "fn": 0,
+      "fn": 20,
       "precision": 1,
-      "recall": 1
+      "recall": 0.4594594594594595
     }
   ],
   "controlCoverage": {

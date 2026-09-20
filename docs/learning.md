@@ -47,3 +47,19 @@ A running list, for the Builder Center post.
   all seven steps; the steps imported the `Reducer` type back from the registry. Type-only,
   so TypeScript was perfectly happy — `dependency-cruiser` caught it. Fixed by moving the
   type to its own module.
+- **pnpm 11 runs a dependency check before every script**, and a workspace with an
+  unapproved build script (`esbuild` again) makes *every* `pnpm typecheck` fail with a stack
+  trace from `runDepsStatusCheck` rather than from the script you asked for. The fix is the
+  same `onlyBuiltDependencies` entry, but the symptom points somewhere else entirely.
+- **`-0` is a rupee figure JavaScript will happily produce.** `negPaise(ZERO)` gave `-0`, which
+  is `===` to `0` but not `Object.is` to it, so `toMatchObject({ amount: 0 })` failed on a
+  finding whose amount was genuinely zero. Fixed at the source rather than in the tests: a
+  zero cut negates to zero.
+- **A trigram threshold tuned for single words is wrong for billing lines.** The §14 default
+  of 0.92 comes from the pg_trgm world; on multi-token descriptions ("pharmacy - day 2")
+  the union of trigrams grows with every token, and 0.92 escalates half the corpus while
+  0.52 is still 99.98% accurate. The number is only defensible once it is on a curve.
+- **Fault matching has to be an assignment, not a greedy pass.** With two faults under one
+  clause, the first fault can take the dispute the second needed and the harness scores a
+  miss the engine never made. Three faults per pack keeps the exact search trivial.
+

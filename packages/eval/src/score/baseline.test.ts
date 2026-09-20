@@ -12,6 +12,7 @@ const clause = (over: Partial<PerClauseScore> & { clauseId: string }): PerClause
 });
 
 const summary = (over: Partial<EvalSummary> = {}): EvalSummary => ({
+  profile: 'clean',
   packs: 200,
   faults: 170,
   detected: 170,
@@ -19,6 +20,19 @@ const summary = (over: Partial<EvalSummary> = {}): EvalSummary => ({
   controlPassRate: 1,
   controlFalsePositiveRate: 0,
   meanAttributionErrorPaise: 0,
+  controlCoverage: {
+    'lawful-room-cap': 20, 'lawful-icu-cap': 5, 'lawful-sublimit': 8, 'lawful-proportionate': 25,
+    'lawful-copay': 30, 'lawful-annexure': 40, 'lawful-deductible': 22,
+  },
+  gatedLineRate: 0,
+  unmatchedLineRate: 0,
+  missesByReason: { GATED: 0, UNMATCHED: 0, ENGINE: 0 },
+  byArchetype: {
+    MEDICAL: { packs: 80, faults: 70, detected: 70 },
+    DAYCARE_SURGERY: { packs: 30, faults: 25, detected: 25 },
+    MAJOR_SURGERY: { packs: 60, faults: 50, detected: 50 },
+    CRITICAL_CARE: { packs: 30, faults: 25, detected: 25 },
+  },
   ...over,
 });
 
@@ -82,6 +96,17 @@ describe('the eval regression gate', () => {
     );
 
     expect(failures.some((f) => f.includes('new false positives under LIMIT.ROOM'))).toBe(true);
+  });
+
+  it('fails when a lawful control the baseline demonstrated is no longer in the set', () => {
+    const failures = compareToBaseline(
+      baseline,
+      summary({
+        controlCoverage: { ...summary().controlCoverage, 'lawful-copay': 0 },
+      }),
+    );
+
+    expect(failures.some((f) => f.includes('control lawful-copay is no longer demonstrated'))).toBe(true);
   });
 
   it('fails when precision drops on a clause the baseline tracked', () => {

@@ -19,6 +19,14 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'normalise',
+      root: './packages/normalise',
+      environment: 'node',
+      include: ['src/**/*.test.ts'],
+    },
+  },
+  {
+    test: {
       name: 'eval',
       root: './packages/eval',
       environment: 'node',

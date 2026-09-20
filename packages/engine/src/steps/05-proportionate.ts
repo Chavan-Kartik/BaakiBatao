@@ -5,6 +5,7 @@ import type {
   Finding,
   Paise,
   PolicySchedule,
+  RoundingMode,
 } from '@fc/contracts';
 import { ZERO, maxPaise, subPaise } from '@fc/contracts';
 import type { Reducer } from '../types';
@@ -69,7 +70,7 @@ export const proportionate: Reducer = (state, ctx) => {
     const category = ctx.rulepack.categories[line.categoryId];
     if (!category) return line;
 
-    const verdict = lineVerdict(line, category, gate, ctx.policy);
+    const verdict = lineVerdict(line, category, gate, ctx.policy, ctx.rulepack.rounding.mode);
 
     const { findings: produced, attributed } = classifyCut({
       stepId: 'PROPORTIONATE',
@@ -209,6 +210,7 @@ function lineVerdict(
   category: CategoryDefinition,
   gate: Extract<Gate, { kind: 'APPLY' | 'FORBIDDEN' }>,
   policy: PolicySchedule,
+  rounding: RoundingMode,
 ): Verdict {
   if (gate.kind === 'FORBIDDEN') {
     return {
@@ -253,7 +255,7 @@ function lineVerdict(
 
   // Inside the lawful base. This is the only place in the engine where a
   // fraction touches money, and the rounding mode comes from the rulepack.
-  const surviving = applyRatio(line.allowed, gate.numerator, gate.denominator);
+  const surviving = applyRatio(line.allowed, gate.numerator, gate.denominator, rounding);
   const lawfulCut = maxPaise(ZERO, subPaise(line.allowed, surviving));
 
   return {

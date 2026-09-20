@@ -1,0 +1,23 @@
+{
+  "name": "@fc/normalise",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tier 1 of the normalisation cascade: the lexicon, exact and trigram-fuzzy. Pure — runs in Lambda, in the browser and in the eval harness.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fc/contracts": "workspace:*",
+    "@fc/rulepack": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}

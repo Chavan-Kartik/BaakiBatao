@@ -27,7 +27,8 @@ export const addPaise = (...xs: readonly Paise[]): Paise =>
 
 export const subPaise = (a: Paise, b: Paise): Paise => unsafePaise(a - b);
 
-export const negPaise = (a: Paise): Paise => unsafePaise(-a);
+/** `-0` is not a rupee figure; a zero cut negates to zero. */
+export const negPaise = (a: Paise): Paise => unsafePaise(a === 0 ? 0 : -a);
 
 export const absPaise = (a: Paise): Paise => unsafePaise(Math.abs(a));
 
